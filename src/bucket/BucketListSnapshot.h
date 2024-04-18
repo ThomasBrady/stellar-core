@@ -66,7 +66,8 @@ class SearchableBucketListSnapshot : public NonMovableOrCopyable
     void loopAllBuckets(std::function<bool(BucketSnapshot const&)> f) const;
 
     std::vector<LedgerEntry>
-    loadKeysInternal(std::set<LedgerKey, LedgerEntryIdCmp> const& inKeys);
+    loadKeysInternal(std::set<LedgerKey, LedgerEntryIdCmp> const& inKeys,
+                     LedgerKeyMeter* lkMeter);
 
     std::shared_ptr<LedgerEntry> getLedgerEntryInternal(LedgerKey const& k);
 
@@ -77,7 +78,8 @@ class SearchableBucketListSnapshot : public NonMovableOrCopyable
 
   public:
     std::vector<LedgerEntry>
-    loadKeys(std::set<LedgerKey, LedgerEntryIdCmp> const& inKeys);
+    loadKeysWithLimits(std::set<LedgerKey, LedgerEntryIdCmp> const& inKeys,
+                       LedgerKeyMeter* lkMeter);
 
     std::vector<LedgerEntry>
     loadPoolShareTrustLinesByAccountAndAsset(AccountID const& accountID,

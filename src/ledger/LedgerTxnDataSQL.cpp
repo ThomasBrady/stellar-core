@@ -496,7 +496,8 @@ LedgerTxnRoot::Impl::bulkLoadData(UnorderedSet<LedgerKey> const& keys) const
     {
         BulkLoadDataOperation op(mApp.getDatabase(), keys);
         return populateLoadedEntries(
-            keys, mApp.getDatabase().doDatabaseTypeSpecificOperation(op));
+            keys, mApp.getDatabase().doDatabaseTypeSpecificOperation(op),
+            nullptr);
     }
     else
     {

@@ -27,7 +27,8 @@ class SearchableBucketListSnapshot;
 template <typename KeySetT>
 UnorderedMap<LedgerKey, std::shared_ptr<LedgerEntry const>>
 populateLoadedEntries(KeySetT const& keys,
-                      std::vector<LedgerEntry> const& entries);
+                      std::vector<LedgerEntry> const& entries,
+                      LedgerKeyMeter* lkMeter = nullptr);
 
 class EntryIterator::AbstractImpl
 {
@@ -638,7 +639,9 @@ class LedgerTxn::Impl
     // unsealHeader has the same exception safety guarantee as f
     void unsealHeader(LedgerTxn& self, std::function<void(LedgerHeader&)> f);
 
-    uint32_t prefetch(UnorderedSet<LedgerKey> const& keys);
+    uint32_t prefetchClassic(UnorderedSet<LedgerKey> const& keys);
+    uint32_t prefetchSoroban(UnorderedSet<LedgerKey> const& keys,
+                             LedgerKeyMeter* lkMeter);
 
     double getPrefetchHitRate() const;
 
@@ -876,6 +879,9 @@ class LedgerTxnRoot::Impl
 
     SearchableBucketListSnapshot& getSearchableBucketListSnapshot() const;
 
+    uint32_t prefetchInternal(UnorderedSet<LedgerKey> const& keys,
+                              LedgerKeyMeter* lkMeter = nullptr);
+
   public:
     // Constructor has the strong exception safety guarantee
     Impl(Application& app, size_t entryCacheSize, size_t prefetchBatchSize
@@ -973,7 +979,9 @@ class LedgerTxnRoot::Impl
     // Prefetch some or all of given keys in batches. Note that no prefetching
     // could occur if the cache is at its fill ratio. Returns number of keys
     // prefetched.
-    uint32_t prefetch(UnorderedSet<LedgerKey> const& keys);
+    uint32_t prefetchClassic(UnorderedSet<LedgerKey> const& keys);
+    uint32_t prefetchSoroban(UnorderedSet<LedgerKey> const& keys,
+                             LedgerKeyMeter* lkMeter);
 
     double getPrefetchHitRate() const;
 

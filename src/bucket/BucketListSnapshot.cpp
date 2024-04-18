@@ -111,14 +111,15 @@ SearchableBucketListSnapshot::getLedgerEntryInternal(LedgerKey const& k)
 
 std::vector<LedgerEntry>
 SearchableBucketListSnapshot::loadKeysInternal(
-    std::set<LedgerKey, LedgerEntryIdCmp> const& inKeys)
+    std::set<LedgerKey, LedgerEntryIdCmp> const& inKeys,
+    LedgerKeyMeter* lkMeter)
 {
     std::vector<LedgerEntry> entries;
 
     // Make a copy of the key set, this loop is destructive
     auto keys = inKeys;
     auto f = [&](BucketSnapshot const& b) {
-        b.loadKeys(keys, entries);
+        b.loadKeysWithLimits(keys, entries, lkMeter);
         return keys.empty();
     };
 
@@ -127,8 +128,9 @@ SearchableBucketListSnapshot::loadKeysInternal(
 }
 
 std::vector<LedgerEntry>
-SearchableBucketListSnapshot::loadKeys(
-    std::set<LedgerKey, LedgerEntryIdCmp> const& inKeys)
+SearchableBucketListSnapshot::loadKeysWithLimits(
+    std::set<LedgerKey, LedgerEntryIdCmp> const& inKeys,
+    LedgerKeyMeter* lkMeter)
 {
     ZoneScoped;
     mSnapshotManager.maybeUpdateSnapshot(mSnapshot);
@@ -138,11 +140,11 @@ SearchableBucketListSnapshot::loadKeys(
         auto timer =
             mSnapshotManager.recordBulkLoadMetrics("prefetch", inKeys.size())
                 .TimeScope();
-        return loadKeysInternal(inKeys);
+        return loadKeysInternal(inKeys, lkMeter);
     }
     else
     {
-        return loadKeysInternal(inKeys);
+        return loadKeysInternal(inKeys, lkMeter);
     }
 }
 
@@ -182,7 +184,7 @@ SearchableBucketListSnapshot::loadPoolShareTrustLinesByAccountAndAsset(
                      .recordBulkLoadMetrics("poolshareTrustlines",
                                             trustlinesToLoad.size())
                      .TimeScope();
-    return loadKeysInternal(trustlinesToLoad);
+    return loadKeysInternal(trustlinesToLoad, nullptr);
 }
 
 std::vector<InflationWinner>

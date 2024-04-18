@@ -148,7 +148,8 @@ LedgerTxnRoot::Impl::bulkLoadConfigSettings(
     {
         bulkLoadConfigSettingsOperation op(mApp.getDatabase(), keys);
         return populateLoadedEntries(
-            keys, mApp.getDatabase().doDatabaseTypeSpecificOperation(op));
+            keys, mApp.getDatabase().doDatabaseTypeSpecificOperation(op),
+            nullptr);
     }
     else
     {

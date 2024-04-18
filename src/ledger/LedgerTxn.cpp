@@ -23,6 +23,7 @@
 #include "xdr/Stellar-ledger-entries.h"
 #include "xdrpp/marshal.h"
 #include <Tracy.hpp>
+#include <algorithm>
 #include <soci.h>
 
 namespace stellar
@@ -168,11 +169,93 @@ LedgerEntryPtr::isDeleted() const
 {
     return mState == EntryPtrState::DELETED;
 }
+bool
+LedgerKeyMeter::canLoad(LedgerKey const& key, size_t entrySizeBytes) const
+{
+    return maxReadQuotaForKey(key) >= entrySizeBytes;
+}
+
+void
+LedgerKeyMeter::addTxn(SorobanResources const& resources)
+{
+    mTxReadBytes.push_back(resources.readBytes);
+    auto txId = mTxReadBytes.size() - 1;
+    auto addKeyToTxnMap = [&](auto const& key) {
+        mLedgerKeyToTxs[key].emplace_back(txId);
+    };
+    std::for_each(resources.footprint.readOnly.begin(),
+                  resources.footprint.readOnly.end(), addKeyToTxnMap);
+    std::for_each(resources.footprint.readWrite.begin(),
+                  resources.footprint.readWrite.end(), addKeyToTxnMap);
+}
+
+void
+LedgerKeyMeter::updateReadQuotasForKey(LedgerKey const& key,
+                                       size_t entrySizeBytes)
+{
+    if (key.type() == TTL)
+    {
+        // TTL entries do not count towards the txn read byte limit.
+        return;
+    }
+    auto iter = mLedgerKeyToTxs.find(key);
+    // This assert will fail if the transaction is not metered (classic).
+    // Classic prefetching should never call this function.
+    releaseAssert(iter != mLedgerKeyToTxs.end());
+    // Update the read quota for every transaction containing this key.
+    bool exceedsQuotaForAllTxns = true;
+    for (auto txn : iter->second)
+    {
+        auto& quota = mTxReadBytes.at(txn);
+        if (quota < entrySizeBytes)
+        {
+            quota = 0;
+        }
+        else
+        {
+            exceedsQuotaForAllTxns = false;
+            quota -= entrySizeBytes;
+        }
+    }
+    if (exceedsQuotaForAllTxns)
+    {
+        mNotLoadedKeys.insert(key);
+    }
+}
+
+uint32_t
+LedgerKeyMeter::maxReadQuotaForKey(LedgerKey const& key) const
+{
+    // TTL entries do not count towards the txn read byte limit.
+    if (key.type() == TTL)
+    {
+        return std::numeric_limits<uint32_t>::max();
+    }
+    auto iter = mLedgerKeyToTxs.find(key);
+    // This assert will fail if the transaction is not metered (classic).
+    // Classic prefetching should never call this function.
+    releaseAssert(iter != mLedgerKeyToTxs.end());
+    return std::reduce(iter->second.begin(), iter->second.end(), 0,
+                       [&](uint32_t maxReadQuota, size_t const txn) {
+                           return std::max(maxReadQuota, mTxReadBytes.at(txn));
+                       });
+}
+
+bool
+LedgerKeyMeter::loadFailed(LedgerKey const& key) const
+{
+    if (mNotLoadedKeys.find(key) != mNotLoadedKeys.end())
+    {
+        return true;
+    }
+    return false;
+}
 
 template <typename KeySetT>
 UnorderedMap<LedgerKey, std::shared_ptr<LedgerEntry const>>
 populateLoadedEntries(KeySetT const& keys,
-                      std::vector<LedgerEntry> const& entries)
+                      std::vector<LedgerEntry> const& entries,
+                      LedgerKeyMeter* lkMeter)
 {
     UnorderedMap<LedgerKey, std::shared_ptr<LedgerEntry const>> res;
 
@@ -192,7 +275,10 @@ populateLoadedEntries(KeySetT const& keys,
 
     for (auto const& key : keys)
     {
-        if (res.find(key) == res.end())
+        // If the key was not loaded (but not due to metering), we should put
+        // a nullptr entry in the result.
+        if (res.find(key) == res.end() &&
+            (!lkMeter || !lkMeter->loadFailed(key)))
         {
             res.emplace(key, nullptr);
         }
@@ -202,11 +288,13 @@ populateLoadedEntries(KeySetT const& keys,
 
 template UnorderedMap<LedgerKey, std::shared_ptr<LedgerEntry const>>
 populateLoadedEntries(LedgerKeySet const& keys,
-                      std::vector<LedgerEntry> const& entries);
+                      std::vector<LedgerEntry> const& entries,
+                      LedgerKeyMeter* lkMeter);
 
 template UnorderedMap<LedgerKey, std::shared_ptr<LedgerEntry const>>
 populateLoadedEntries(UnorderedSet<LedgerKey> const& keys,
-                      std::vector<LedgerEntry> const& entries);
+                      std::vector<LedgerEntry> const& entries,
+                      LedgerKeyMeter* lkMeter);
 
 bool
 operator==(OfferDescriptor const& lhs, OfferDescriptor const& rhs)
@@ -2040,15 +2128,28 @@ LedgerTxn::Impl::getPrefetchHitRate() const
 }
 
 uint32_t
-LedgerTxn::prefetch(UnorderedSet<LedgerKey> const& keys)
+LedgerTxn::prefetchClassic(UnorderedSet<LedgerKey> const& keys)
 {
-    return getImpl()->prefetch(keys);
+    return getImpl()->prefetchClassic(keys);
+}
+uint32_t
+LedgerTxn::prefetchSoroban(UnorderedSet<LedgerKey> const& keys,
+                           LedgerKeyMeter* lkMeter)
+{
+    return getImpl()->prefetchSoroban(keys, lkMeter);
 }
 
 uint32_t
-LedgerTxn::Impl::prefetch(UnorderedSet<LedgerKey> const& keys)
+LedgerTxn::Impl::prefetchClassic(UnorderedSet<LedgerKey> const& keys)
 {
-    return mParent.prefetch(keys);
+    return mParent.prefetchClassic(keys);
+}
+
+uint32_t
+LedgerTxn::Impl::prefetchSoroban(UnorderedSet<LedgerKey> const& keys,
+                                 LedgerKeyMeter* lkMeter)
+{
+    return mParent.prefetchSoroban(keys, lkMeter);
 }
 
 void
@@ -2952,13 +3053,36 @@ LedgerTxnRoot::dropTTL(bool rebuild)
 }
 
 uint32_t
-LedgerTxnRoot::prefetch(UnorderedSet<LedgerKey> const& keys)
+LedgerTxnRoot::prefetchClassic(UnorderedSet<LedgerKey> const& keys)
 {
-    return mImpl->prefetch(keys);
+    return mImpl->prefetchClassic(keys);
 }
 
 uint32_t
-LedgerTxnRoot::Impl::prefetch(UnorderedSet<LedgerKey> const& keys)
+LedgerTxnRoot::prefetchSoroban(UnorderedSet<LedgerKey> const& keys,
+                               LedgerKeyMeter* lkMeter)
+
+{
+    releaseAssert(lkMeter);
+    return mImpl->prefetchSoroban(keys, lkMeter);
+}
+
+uint32_t
+LedgerTxnRoot::Impl::prefetchSoroban(UnorderedSet<LedgerKey> const& keys,
+                                     LedgerKeyMeter* lkMeter)
+{
+    ZoneScoped;
+    return prefetchInternal(keys, lkMeter);
+}
+uint32_t
+LedgerTxnRoot::Impl::prefetchClassic(UnorderedSet<LedgerKey> const& keys)
+{
+    ZoneScoped;
+    return prefetchInternal(keys);
+}
+uint32_t
+LedgerTxnRoot::Impl::prefetchInternal(UnorderedSet<LedgerKey> const& keys,
+                                      LedgerKeyMeter* lkMeter)
 {
     ZoneScoped;
     uint32_t total = 0;
@@ -2978,6 +3102,17 @@ LedgerTxnRoot::Impl::prefetch(UnorderedSet<LedgerKey> const& keys)
         {
             keys.insert(key);
         }
+        else if (lkMeter)
+        {
+            auto const& mEntry = mEntryCache.get(key);
+            if (mEntry.entry)
+            {
+                // If the key is already in the cache, it still contributes to
+                // metering.
+                lkMeter->updateReadQuotasForKey(key,
+                                                xdr::xdr_size(*mEntry.entry));
+            }
+        }
     };
 
     if (mApp.getConfig().isUsingBucketListDB())
@@ -2987,9 +3122,9 @@ LedgerTxnRoot::Impl::prefetch(UnorderedSet<LedgerKey> const& keys)
         {
             insertIfNotLoaded(keysToSearch, key);
         }
-
-        auto blLoad = getSearchableBucketListSnapshot().loadKeys(keysToSearch);
-        cacheResult(populateLoadedEntries(keysToSearch, blLoad));
+        auto blLoad = getSearchableBucketListSnapshot().loadKeysWithLimits(
+            keysToSearch, lkMeter);
+        cacheResult(populateLoadedEntries(keysToSearch, blLoad, lkMeter));
     }
     else
     {
@@ -3342,7 +3477,7 @@ LedgerTxnRoot::Impl::populateEntryCacheFromBestOffers(
             toPrefetch.emplace(trustlineKey(oe.sellerID, oe.selling));
         }
     }
-    prefetch(toPrefetch);
+    prefetchClassic(toPrefetch);
 }
 
 bool
@@ -3497,8 +3632,7 @@ LedgerTxnRoot::Impl::getOffersByAccountAndAsset(AccountID const& account,
             toPrefetch.emplace(trustlineKey(oe.sellerID, oe.selling));
         }
     }
-    prefetch(toPrefetch);
-
+    prefetchClassic(toPrefetch);
     return res;
 }
 
