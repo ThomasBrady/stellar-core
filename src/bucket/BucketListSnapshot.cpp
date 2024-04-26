@@ -137,10 +137,22 @@ SearchableBucketListSnapshot::loadKeysWithLimits(
 
     if (threadIsMain())
     {
-        auto timer =
-            mSnapshotManager.recordBulkLoadMetrics("prefetch", inKeys.size())
-                .TimeScope();
-        return loadKeysInternal(inKeys, lkMeter);
+        if (lkMeter)
+        {
+            auto timer =
+                mSnapshotManager
+                    .recordBulkLoadMetrics("prefetch-soroban", inKeys.size())
+                    .TimeScope();
+            return loadKeysInternal(inKeys, lkMeter);
+        }
+        else
+        {
+            auto timer =
+                mSnapshotManager
+                    .recordBulkLoadMetrics("prefetch-classic", inKeys.size())
+                    .TimeScope();
+            return loadKeysInternal(inKeys, lkMeter);
+        }
     }
     else
     {
