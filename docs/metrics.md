@@ -37,7 +37,8 @@ bucketlistDB.bloom.misses                 | meter     | number of bloom filter f
 bucketlistDB.bulk.loads                   | meter     | number of entries BucketListDB queried to prefetch
 bucketlistDB.bulk.inflationWinners        | timer     | time to load inflation winners
 bucketlistDB.bulk.poolshareTrustlines     | timer     | time to load poolshare trustlines by accountID and assetID
-bucketlistDB.bulk.prefetch                | timer     | time to prefetch
+bucketlistDB.bulk.prefetch-classic        | timer     | time to prefetch entries for classic transacitons
+bucketlistDB.bulk.prefetch-soroban        | timer     | time to prefetch entries for soroban transactions
 bucketlistDB.point.<X>                    | timer     | time to load single entry of type <X>
 herder.pending[-soroban]-txs.age0         | counter   | number of gen0 pending transactions
 herder.pending[-soroban]-txs.age1         | counter   | number of gen1 pending transactions
