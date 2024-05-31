@@ -6,6 +6,7 @@
 #include "util/Math.h"
 #include "util/NonCopyable.h"
 
+#include <Tracy.hpp>
 #include <random>
 #include <unordered_map>
 
@@ -106,6 +107,7 @@ class RandomEvictionCache : public NonMovableOrCopyable
     void
     put(K const& k, V const& v)
     {
+        ZoneScoped;
         ++mGeneration;
         CacheValue newValue{mGeneration, v};
         auto pair = mValueMap.insert(std::make_pair(k, newValue));
@@ -137,6 +139,7 @@ class RandomEvictionCache : public NonMovableOrCopyable
     bool
     exists(K const& k, bool countMisses = true)
     {
+        ZoneScoped;
         bool miss = (mValueMap.find(k) == mValueMap.end());
         // We do not count hits here; but we usually count misses, as exists()
         // is typically used as a guard followed by a get(). If you're using it

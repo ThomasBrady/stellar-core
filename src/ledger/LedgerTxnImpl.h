@@ -443,7 +443,8 @@ class LedgerTxn::Impl
 
     // lookup in mEntry or in parents
     std::pair<std::shared_ptr<InternalLedgerEntry const>, EntryMap::iterator>
-    getNewestVersionEntryMap(InternalLedgerKey const& key);
+    getNewestVersionEntryMap(InternalLedgerKey const& key,
+                             bool invokeHost = false);
 
   public:
     // Constructor has the strong exception safety guarantee
@@ -559,14 +560,16 @@ class LedgerTxn::Impl
     //   modified
     // - the entry cache may be, but is not guaranteed to be, cleared.
     std::shared_ptr<InternalLedgerEntry const>
-    getNewestVersion(InternalLedgerKey const& key) const;
+    getNewestVersion(InternalLedgerKey const& key,
+                     bool invokeHost = false) const;
 
     // load has the basic exception safety guarantee. If it throws an exception,
     // then
     // - the prepared statement cache may be, but is not guaranteed to be,
     //   modified
     // - the entry cache may be, but is not guaranteed to be, cleared.
-    LedgerTxnEntry load(LedgerTxn& self, InternalLedgerKey const& key);
+    LedgerTxnEntry load(LedgerTxn& self, InternalLedgerKey const& key,
+                        bool invokeHost = false);
 
     // createWithoutLoading has the strong exception safety guarantee.
     // If it throws an exception, then the current LedgerTxn::Impl is unchanged.
@@ -638,6 +641,7 @@ class LedgerTxn::Impl
                              LedgerKeyMeter* lkMeter);
 
     double getPrefetchHitRate() const;
+    double getSorobanPrefetchHitRate() const;
 
     void prepareNewObjects(size_t s);
 
@@ -736,13 +740,17 @@ class LedgerTxnRoot::Impl
     mutable EntryCache mEntryCache;
     mutable BestOffers mBestOffers;
     mutable uint64_t mPrefetchHits{0};
+    mutable uint64_t mSorobanPrefetchHits{0};
     mutable uint64_t mPrefetchMisses{0};
+    mutable uint64_t mSorobanPrefetchMisses{0};
     mutable std::shared_ptr<SearchableBucketListSnapshot>
         mSearchableBucketListSnapshot{};
 
     size_t mBulkLoadBatchSize;
     std::unique_ptr<soci::transaction> mTransaction;
     AbstractLedgerTxn* mChild;
+    LedgerKeySet mPrefetch{};
+    LedgerKeySet mPrefetchRateLimited{};
 
 #ifdef BEST_OFFER_DEBUGGING
     bool const mBestOfferDebuggingEnabled;
@@ -833,7 +841,7 @@ class LedgerTxnRoot::Impl
     //    database for the keyset that it has entries for. It's a precise
     //    image of a subset of the database.
     std::shared_ptr<InternalLedgerEntry const>
-    getFromEntryCache(LedgerKey const& key) const;
+    getFromEntryCache(LedgerKey const& key, bool invokeHost = false) const;
     void putInEntryCache(LedgerKey const& key,
                          std::shared_ptr<LedgerEntry const> const& entry,
                          LoadType type) const;
@@ -966,7 +974,8 @@ class LedgerTxnRoot::Impl
     //   modified
     // - the entry cache may be, but is not guaranteed to be, cleared.
     std::shared_ptr<InternalLedgerEntry const>
-    getNewestVersion(InternalLedgerKey const& key) const;
+    getNewestVersion(InternalLedgerKey const& key,
+                     bool invokeHost = false) const;
 
     void rollbackChild() noexcept;
 
@@ -978,6 +987,7 @@ class LedgerTxnRoot::Impl
                              LedgerKeyMeter* lkMeter);
 
     double getPrefetchHitRate() const;
+    double getSorobanPrefetchHitRate() const;
 
     void prepareNewObjects(size_t s);
 

@@ -57,6 +57,7 @@ class LedgerManagerImpl : public LedgerManager
     medida::Histogram& mTransactionCount;
     medida::Histogram& mOperationCount;
     medida::Histogram& mPrefetchHitRate;
+    medida::Histogram& mSorobanPrefetchHitRate;
     medida::Timer& mLedgerClose;
     medida::Buckets& mLedgerAgeClosed;
     medida::Counter& mLedgerAge;

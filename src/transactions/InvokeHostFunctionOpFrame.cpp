@@ -580,7 +580,7 @@ InvokeHostFunctionOpFrame::doApply(Application& app, AbstractLedgerTxn& ltx,
             }
         }
 
-        auto ltxe = ltx.load(lk);
+        auto ltxe = ltx.load(lk, true);
         if (ltxe)
         {
             ltxe.current() = le;
@@ -594,6 +594,9 @@ InvokeHostFunctionOpFrame::doApply(Application& app, AbstractLedgerTxn& ltx,
 
     // Check that each newly created ContractCode or ContractData entry also
     // creates an ttlEntry
+    LedgerKeySet footprintReadWriteKeys(footprint.readWrite.begin(),
+                                        footprint.readWrite.end());
+
     for (auto const& key : createdKeys)
     {
         if (isSorobanEntry(key))
@@ -607,6 +610,17 @@ InvokeHostFunctionOpFrame::doApply(Application& app, AbstractLedgerTxn& ltx,
         }
     }
 
+    // releaseAssert(createdKeys.size() <= footprint.readWrite.size());
+    for (const auto k : createdKeys)
+    {
+        if (footprintReadWriteKeys.find(k) == footprintReadWriteKeys.end())
+        {
+            std::cerr << "Created key not in footprint: "
+                      << xdr::xdr_to_string(k) << std::endl;
+            releaseAssert(k.type() == TTL);
+        }
+    }
+
     // Erase every entry not returned.
     // NB: The entries that haven't been touched are passed through
     // from host, so this should never result in removing an entry
@@ -615,7 +629,7 @@ InvokeHostFunctionOpFrame::doApply(Application& app, AbstractLedgerTxn& ltx,
     {
         if (createdAndModifiedKeys.find(lk) == createdAndModifiedKeys.end())
         {
-            auto ltxe = ltx.load(lk);
+            auto ltxe = ltx.load(lk, true);
             if (ltxe)
             {
                 releaseAssertOrThrow(isSorobanEntry(lk));
@@ -623,7 +637,7 @@ InvokeHostFunctionOpFrame::doApply(Application& app, AbstractLedgerTxn& ltx,
 
                 // Also delete associated ttlEntry
                 auto ttlLK = getTTLKey(lk);
-                auto ttlLtxe = ltx.load(ttlLK);
+                auto ttlLtxe = ltx.load(ttlLK, true);
                 releaseAssertOrThrow(ttlLtxe);
                 ltx.erase(ttlLK);
             }

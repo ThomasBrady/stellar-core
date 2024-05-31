@@ -19,6 +19,7 @@
 #include "main/Application.h"
 #include "transactions/TransactionUtils.h"
 #include "util/GlobalChecks.h"
+#include "util/XDRCereal.h"
 #include "util/XDROperators.h"
 #include "util/XDRStream.h"
 #include "util/types.h"
@@ -27,7 +28,6 @@
 #include <Tracy.hpp>
 #include <algorithm>
 #include <soci.h>
-
 namespace stellar
 {
 
@@ -174,7 +174,19 @@ LedgerEntryPtr::isDeleted() const
 bool
 LedgerKeyMeter::canLoad(LedgerKey const& key, size_t entrySizeBytes) const
 {
-    return maxReadQuotaForKey(key) >= entrySizeBytes;
+    ZoneScoped;
+    auto loadable = maxReadQuotaForKey(key) >= entrySizeBytes;
+    if (loadable)
+    {
+        std::string txt = "has quota";
+        ZoneText(txt.c_str(), txt.size());
+    }
+    else
+    {
+        std::string txt = "insufficient quota";
+        ZoneText(txt.c_str(), txt.size());
+    }
+    return loadable;
 }
 
 void
@@ -246,10 +258,15 @@ LedgerKeyMeter::maxReadQuotaForKey(LedgerKey const& key) const
 bool
 LedgerKeyMeter::loadFailed(LedgerKey const& key) const
 {
+    ZoneScoped;
     if (mNotLoadedKeys.find(key) != mNotLoadedKeys.end())
     {
+        std::string txt = "failed";
+        ZoneText(txt.c_str(), txt.size());
         return true;
     }
+    std::string txt = "succeeded";
+    ZoneText(txt.c_str(), txt.size());
     return false;
 }
 
@@ -652,6 +669,13 @@ LedgerTxn::create(InternalLedgerEntry const& entry)
 LedgerTxnEntry
 LedgerTxn::Impl::create(LedgerTxn& self, InternalLedgerEntry const& entry)
 {
+    ZoneScoped;
+    if (entry.type() == InternalLedgerEntryType::LEDGER_ENTRY)
+    {
+        auto key = LedgerEntryKey(entry.ledgerEntry());
+        auto type = xdrToCerealString(key.type(), "type=");
+        ZoneText(type.c_str(), type.size());
+    }
     throwIfSealed();
     throwIfChild();
 
@@ -1500,32 +1524,36 @@ LedgerTxn::Impl::getAllTTLKeysWithoutSealing() const
 }
 
 std::shared_ptr<InternalLedgerEntry const>
-LedgerTxn::getNewestVersion(InternalLedgerKey const& key) const
+LedgerTxn::getNewestVersion(InternalLedgerKey const& key, bool invokeHost) const
 {
-    return getImpl()->getNewestVersion(key);
+    return getImpl()->getNewestVersion(key, invokeHost);
 }
 
 std::shared_ptr<InternalLedgerEntry const>
-LedgerTxn::Impl::getNewestVersion(InternalLedgerKey const& key) const
+LedgerTxn::Impl::getNewestVersion(InternalLedgerKey const& key,
+                                  bool invokeHost) const
 {
+    ZoneScoped;
     auto iter = mEntry.find(key);
     if (iter != mEntry.end())
     {
         return iter->second.get();
     }
-    return mParent.getNewestVersion(key);
+    return mParent.getNewestVersion(key, invokeHost);
 }
 
 std::pair<std::shared_ptr<InternalLedgerEntry const>,
           LedgerTxn::Impl::EntryMap::iterator>
-LedgerTxn::Impl::getNewestVersionEntryMap(InternalLedgerKey const& key)
+LedgerTxn::Impl::getNewestVersionEntryMap(InternalLedgerKey const& key,
+                                          bool invokeHost)
 {
+    ZoneScoped;
     auto iter = mEntry.find(key);
     if (iter != mEntry.end())
     {
         return std::make_pair(iter->second.get(), iter);
     }
-    return std::make_pair(mParent.getNewestVersion(key), iter);
+    return std::make_pair(mParent.getNewestVersion(key, invokeHost), iter);
 }
 
 UnorderedMap<LedgerKey, LedgerEntry>
@@ -1634,14 +1662,25 @@ LedgerTxn::Impl::getPoolShareTrustLinesByAccountAndAsset(
 }
 
 LedgerTxnEntry
-LedgerTxn::load(InternalLedgerKey const& key)
+LedgerTxn::load(InternalLedgerKey const& key, bool invokeHost)
 {
-    return getImpl()->load(*this, key);
+    ZoneScoped;
+    // std::string keyStr {"type="};
+    // keyStr += key.ledgerKey().type();
+    // ZoneText(keyStr.c_str(),keyStr.size());
+    return getImpl()->load(*this, key, invokeHost);
 }
 
 LedgerTxnEntry
-LedgerTxn::Impl::load(LedgerTxn& self, InternalLedgerKey const& key)
+LedgerTxn::Impl::load(LedgerTxn& self, InternalLedgerKey const& key,
+                      bool invokeHost)
 {
+    ZoneScoped;
+    if (key.type() == InternalLedgerEntryType::LEDGER_ENTRY)
+    {
+        auto type = xdrToCerealString(key.ledgerKey().type(), "type=");
+        ZoneText(type.c_str(), type.size());
+    }
     throwIfSealed();
     throwIfChild();
     if (mActive.find(key) != mActive.end())
@@ -1649,7 +1688,7 @@ LedgerTxn::Impl::load(LedgerTxn& self, InternalLedgerKey const& key)
         throw std::runtime_error("Key is active");
     }
 
-    auto newest = getNewestVersionEntryMap(key);
+    auto newest = getNewestVersionEntryMap(key, invokeHost);
     if (!newest.first)
     {
         return {};
@@ -2093,6 +2132,12 @@ LedgerTxn::getPrefetchHitRate() const
     return getImpl()->getPrefetchHitRate();
 }
 
+double
+LedgerTxn::getSorobanPrefetchHitRate() const
+{
+    return getImpl()->getSorobanPrefetchHitRate();
+}
+
 #ifdef BUILD_TESTS
 void
 LedgerTxn::resetForFuzzer()
@@ -2106,7 +2151,11 @@ LedgerTxn::Impl::getPrefetchHitRate() const
 {
     return mParent.getPrefetchHitRate();
 }
-
+double
+LedgerTxn::Impl::getSorobanPrefetchHitRate() const
+{
+    return mParent.getSorobanPrefetchHitRate();
+}
 uint32_t
 LedgerTxn::prefetchClassic(UnorderedSet<LedgerKey> const& keys)
 {
@@ -3052,6 +3101,7 @@ LedgerTxnRoot::Impl::prefetchSoroban(UnorderedSet<LedgerKey> const& keys,
                                      LedgerKeyMeter* lkMeter)
 {
     ZoneScoped;
+    mPrefetchRateLimited.clear();
     return prefetchInternal(keys, lkMeter);
 }
 uint32_t
@@ -3065,6 +3115,7 @@ LedgerTxnRoot::Impl::prefetchInternal(UnorderedSet<LedgerKey> const& keys,
                                       LedgerKeyMeter* lkMeter)
 {
     ZoneScoped;
+    mPrefetch.insert(keys.begin(), keys.end());
     uint32_t total = 0;
 
     auto cacheResult =
@@ -3105,6 +3156,16 @@ LedgerTxnRoot::Impl::prefetchInternal(UnorderedSet<LedgerKey> const& keys,
         auto blLoad = getSearchableBucketListSnapshot().loadKeysWithLimits(
             keysToSearch, lkMeter);
         cacheResult(populateLoadedEntries(keysToSearch, blLoad, lkMeter));
+        if (lkMeter)
+        {
+            for (auto const& key : keys)
+            {
+                if (lkMeter->loadFailed(key))
+                {
+                    mPrefetchRateLimited.insert(key);
+                }
+            }
+        }
     }
     else
     {
@@ -3226,6 +3287,11 @@ LedgerTxnRoot::getPrefetchHitRate() const
 {
     return mImpl->getPrefetchHitRate();
 }
+double
+LedgerTxnRoot::getSorobanPrefetchHitRate() const
+{
+    return mImpl->getSorobanPrefetchHitRate();
+}
 
 double
 LedgerTxnRoot::Impl::getPrefetchHitRate() const
@@ -3237,7 +3303,16 @@ LedgerTxnRoot::Impl::getPrefetchHitRate() const
     return static_cast<double>(mPrefetchHits) /
            (mPrefetchMisses + mPrefetchHits);
 }
-
+double
+LedgerTxnRoot::Impl::getSorobanPrefetchHitRate() const
+{
+    if (mSorobanPrefetchMisses == 0 && mSorobanPrefetchHits == 0)
+    {
+        return 0;
+    }
+    return static_cast<double>(mSorobanPrefetchHits) /
+           (mSorobanPrefetchMisses + mSorobanPrefetchHits);
+}
 void
 LedgerTxnRoot::prepareNewObjects(size_t s)
 {
@@ -3719,13 +3794,15 @@ LedgerTxnRoot::Impl::getInflationWinners(size_t maxWinners, int64_t minVotes)
 }
 
 std::shared_ptr<InternalLedgerEntry const>
-LedgerTxnRoot::getNewestVersion(InternalLedgerKey const& key) const
+LedgerTxnRoot::getNewestVersion(InternalLedgerKey const& key,
+                                bool invokeHost) const
 {
-    return mImpl->getNewestVersion(key);
+    return mImpl->getNewestVersion(key, invokeHost);
 }
 
 std::shared_ptr<InternalLedgerEntry const>
-LedgerTxnRoot::Impl::getNewestVersion(InternalLedgerKey const& gkey) const
+LedgerTxnRoot::Impl::getNewestVersion(InternalLedgerKey const& gkey,
+                                      bool invokeHost) const
 {
     ZoneScoped;
     // Right now, only LEDGER_ENTRY are recorded in the SQL database
@@ -3734,18 +3811,65 @@ LedgerTxnRoot::Impl::getNewestVersion(InternalLedgerKey const& gkey) const
         return nullptr;
     }
     auto const& key = gkey.ledgerKey();
+    auto wasPrefetched = mPrefetch.find(key) != mPrefetch.end();
+    auto prefetchRateLimited =
+        mPrefetchRateLimited.find(key) != mPrefetchRateLimited.end();
 
     if (mEntryCache.exists(key))
     {
         std::string zoneTxt("hit");
+        if (wasPrefetched)
+        {
+            zoneTxt += " (prefetched)";
+        }
+        else
+        {
+            zoneTxt += " (not prefetched)";
+        }
+        if (prefetchRateLimited)
+        {
+            zoneTxt += " (rate limited)";
+        }
+        else
+        {
+            zoneTxt += " (not rate limited)";
+        }
         ZoneText(zoneTxt.c_str(), zoneTxt.size());
-        return getFromEntryCache(key);
+        return getFromEntryCache(key, invokeHost);
     }
     else
     {
+        if (invokeHost && wasPrefetched)
+        {
+            releaseAssert(prefetchRateLimited);
+        }
         std::string zoneTxt("miss");
+        if (wasPrefetched)
+        {
+            zoneTxt += " (prefetched)";
+        }
+        else
+        {
+            zoneTxt += " (not prefetched)";
+        }
+        if (prefetchRateLimited)
+        {
+            zoneTxt += " (rate limited)";
+        }
+        else
+        {
+            zoneTxt += " (not rate limited)";
+        }
         ZoneText(zoneTxt.c_str(), zoneTxt.size());
-        ++mPrefetchMisses;
+        // std::cerr << "miss " << xdr::xdr_to_string(key) << std::endl;
+        if (invokeHost)
+        {
+            ++mSorobanPrefetchMisses;
+        }
+        else
+        {
+            ++mPrefetchMisses;
+        }
     }
 
     std::shared_ptr<LedgerEntry const> entry;
@@ -3853,17 +3977,28 @@ LedgerTxnRoot::Impl::rollbackChild() noexcept
     mChild = nullptr;
     mPrefetchHits = 0;
     mPrefetchMisses = 0;
+
+    mSorobanPrefetchHits = 0;
+    mSorobanPrefetchMisses = 0;
 }
 
 std::shared_ptr<InternalLedgerEntry const>
-LedgerTxnRoot::Impl::getFromEntryCache(LedgerKey const& key) const
+LedgerTxnRoot::Impl::getFromEntryCache(LedgerKey const& key,
+                                       bool invokeHost) const
 {
     try
     {
         auto cached = mEntryCache.get(key);
         if (cached.type == LoadType::PREFETCH)
         {
-            ++mPrefetchHits;
+            if (invokeHost)
+            {
+                ++mSorobanPrefetchHits;
+            }
+            else
+            {
+                ++mPrefetchHits;
+            }
         }
 
         if (cached.entry)

@@ -8,6 +8,7 @@
 #include "util/UnorderedMap.h"
 #include "util/UnorderedSet.h"
 #include "util/types.h"
+#include <Tracy.hpp>
 
 namespace stellar
 {
@@ -28,6 +29,7 @@ getTTLKey(LedgerEntry const& e)
 LedgerKey
 getTTLKey(LedgerKey const& e)
 {
+    ZoneScoped;
     releaseAssert(e.type() == CONTRACT_CODE || e.type() == CONTRACT_DATA);
     LedgerKey k;
     k.type(TTL);

@@ -464,7 +464,8 @@ class AbstractLedgerTxnParent
     // invoking getNewestVersion on its parent. Returns nullptr if the key does
     // not exist or if the corresponding LedgerEntry has been erased.
     virtual std::shared_ptr<InternalLedgerEntry const>
-    getNewestVersion(InternalLedgerKey const& key) const = 0;
+    getNewestVersion(InternalLedgerKey const& key,
+                     bool invokeHost = false) const = 0;
 
     // Return the count of the number of ledger objects of type `let`. Will
     // throw when called on anything other than a (real or stub) root LedgerTxn.
@@ -524,7 +525,9 @@ class AbstractLedgerTxnParent
     // Return the current cache hit rate for prefetched ledger entries, as a
     // fraction from 0.0 to 1.0. Will throw when called on anything other than a
     // (real or stub) root LedgerTxn.
+
     virtual double getPrefetchHitRate() const = 0;
+    virtual double getSorobanPrefetchHitRate() const = 0;
 
     // Prefetch a set of ledger entries into memory, anticipating their use.
     // This is purely advisory and can be a no-op, or do any level of actual
@@ -610,7 +613,8 @@ class AbstractLedgerTxn : public AbstractLedgerTxnParent
     virtual LedgerTxnHeader loadHeader() = 0;
     virtual LedgerTxnEntry create(InternalLedgerEntry const& entry) = 0;
     virtual void erase(InternalLedgerKey const& key) = 0;
-    virtual LedgerTxnEntry load(InternalLedgerKey const& key) = 0;
+    virtual LedgerTxnEntry load(InternalLedgerKey const& key,
+                                bool invokeHost = false) = 0;
     virtual ConstLedgerTxnEntry
     loadWithoutRecord(InternalLedgerKey const& key) = 0;
 
@@ -786,9 +790,11 @@ class LedgerTxn : public AbstractLedgerTxn
     LedgerKeySet getAllTTLKeysWithoutSealing() const override;
 
     std::shared_ptr<InternalLedgerEntry const>
-    getNewestVersion(InternalLedgerKey const& key) const override;
+    getNewestVersion(InternalLedgerKey const& key,
+                     bool invokeHost = false) const override;
 
-    LedgerTxnEntry load(InternalLedgerKey const& key) override;
+    LedgerTxnEntry load(InternalLedgerKey const& key,
+                        bool invokeHost = false) override;
 
     void createWithoutLoading(InternalLedgerEntry const& entry) override;
     void updateWithoutLoading(InternalLedgerEntry const& entry) override;
@@ -834,6 +840,7 @@ class LedgerTxn : public AbstractLedgerTxn
     void dropTTL(bool rebuild) override;
 
     double getPrefetchHitRate() const override;
+    double getSorobanPrefetchHitRate() const override;
     uint32_t prefetchClassic(UnorderedSet<LedgerKey> const& keys) override;
 
     uint32_t prefetchSoroban(UnorderedSet<LedgerKey> const& keys,
@@ -925,7 +932,8 @@ class LedgerTxnRoot : public AbstractLedgerTxnParent
     getInflationWinners(size_t maxWinners, int64_t minBalance) override;
 
     std::shared_ptr<InternalLedgerEntry const>
-    getNewestVersion(InternalLedgerKey const& key) const override;
+    getNewestVersion(InternalLedgerKey const& key,
+                     bool invokeHost = false) const override;
 
     void rollbackChild() noexcept override;
 
@@ -934,6 +942,7 @@ class LedgerTxnRoot : public AbstractLedgerTxnParent
                              LedgerKeyMeter* lkMeter) override;
 
     double getPrefetchHitRate() const override;
+    double getSorobanPrefetchHitRate() const override;
     void prepareNewObjects(size_t s) override;
 
 #ifdef BEST_OFFER_DEBUGGING

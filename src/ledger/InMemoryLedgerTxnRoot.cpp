@@ -91,7 +91,8 @@ InMemoryLedgerTxnRoot::getInflationWinners(size_t maxWinners,
 }
 
 std::shared_ptr<InternalLedgerEntry const>
-InMemoryLedgerTxnRoot::getNewestVersion(InternalLedgerKey const& key) const
+InMemoryLedgerTxnRoot::getNewestVersion(InternalLedgerKey const& key,
+                                        bool invokeHost) const
 {
     return nullptr;
 }
@@ -170,7 +171,11 @@ InMemoryLedgerTxnRoot::getPrefetchHitRate() const
 {
     return 0.0;
 }
-
+double
+InMemoryLedgerTxnRoot::getSorobanPrefetchHitRate() const
+{
+    return 0.0;
+}
 uint32_t
 InMemoryLedgerTxnRoot::prefetchClassic(UnorderedSet<LedgerKey> const&)
 {

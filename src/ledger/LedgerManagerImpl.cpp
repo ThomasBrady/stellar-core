@@ -136,6 +136,8 @@ LedgerManagerImpl::LedgerManagerImpl(Application& app)
           app.getMetrics().NewHistogram({"ledger", "operation", "count"}))
     , mPrefetchHitRate(
           app.getMetrics().NewHistogram({"ledger", "prefetch", "hit-rate"}))
+    , mSorobanPrefetchHitRate(app.getMetrics().NewHistogram(
+          {"ledger", "prefetch", "soroban-hit-rate"}))
     , mLedgerClose(app.getMetrics().NewTimer({"ledger", "ledger", "close"}))
     , mLedgerAgeClosed(app.getMetrics().NewBuckets(
           {"ledger", "age", "closed"}, {5000.0, 7000.0, 10000.0, 20000.0}))
@@ -1613,13 +1615,21 @@ LedgerManagerImpl::logTxApplyMetrics(AbstractLedgerTxn& ltx, size_t numTxs,
 {
     auto ledgerSeq = ltx.loadHeader().current().ledgerSeq;
     auto hitRate = mApp.getLedgerTxnRoot().getPrefetchHitRate() * 100;
+    auto sorobanHitRate =
+        mApp.getLedgerTxnRoot().getSorobanPrefetchHitRate() * 100;
 
-    CLOG_DEBUG(Ledger, "Ledger: {} txs: {}, ops: {}, prefetch hit rate (%): {}",
-               ledgerSeq, numTxs, numOps, hitRate);
+    CLOG_DEBUG(Ledger,
+               "Ledger: {} txs: {}, ops: {}, prefetch hit rate (%): {}, "
+               "soroban prefetch hit rate (%): {}",
+               ledgerSeq, numTxs, numOps, hitRate, sorobanHitRate);
 
     // We lose a bit of precision here, as medida only accepts int64_t
     mPrefetchHitRate.Update(std::llround(hitRate));
     TracyPlot("ledger.prefetch.hit-rate", hitRate);
+
+    // We lose a bit of precision here, as medida only accepts int64_t
+    mSorobanPrefetchHitRate.Update(std::llround(sorobanHitRate));
+    TracyPlot("ledger.prefetch.soroban-hit-rate", sorobanHitRate);
 }
 
 void

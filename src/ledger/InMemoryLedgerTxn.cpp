@@ -240,7 +240,7 @@ InMemoryLedgerTxn::erase(InternalLedgerKey const& key)
 }
 
 LedgerTxnEntry
-InMemoryLedgerTxn::load(InternalLedgerKey const& key)
+InMemoryLedgerTxn::load(InternalLedgerKey const& key, bool invokeHost)
 {
     throw std::runtime_error("called load on InMemoryLedgerTxn");
 }
