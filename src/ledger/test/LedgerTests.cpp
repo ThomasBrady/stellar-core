@@ -31,14 +31,14 @@ TEST_CASE("cannot close ledger with unsupported ledger version", "[ledger]")
 
     applyEmptyLedger();
     {
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         ltx.loadHeader().current().ledgerVersion =
             Config::CURRENT_LEDGER_PROTOCOL_VERSION;
         ltx.commit();
     }
     applyEmptyLedger();
     {
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         ltx.loadHeader().current().ledgerVersion =
             Config::CURRENT_LEDGER_PROTOCOL_VERSION + 1;
         ltx.commit();

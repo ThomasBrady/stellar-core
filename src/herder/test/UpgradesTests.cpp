@@ -234,6 +234,7 @@ makeFlagsUpgrade(int flags)
 
 ConfigUpgradeSetFrameConstPtr
 makeMaxContractSizeBytesTestUpgrade(
+    Application& app,
     AbstractLedgerTxn& ltx, uint32_t maxContractSizeBytes,
     bool expiredEntry = false,
     ContractDataDurability type = ContractDataDurability::TEMPORARY)
@@ -243,7 +244,7 @@ makeMaxContractSizeBytesTestUpgrade(
     auto& configEntry = configUpgradeSet.updatedEntry.emplace_back();
     configEntry.configSettingID(CONFIG_SETTING_CONTRACT_MAX_SIZE_BYTES);
     configEntry.contractMaxSizeBytes() = maxContractSizeBytes;
-    return makeConfigUpgradeSet(ltx, configUpgradeSet, expiredEntry, type);
+    return makeConfigUpgradeSet(app, ltx, configUpgradeSet, expiredEntry, type);
 }
 
 ConfigUpgradeSetFrameConstPtr
@@ -262,7 +263,7 @@ makeBucketListSizeWindowSampleSizeTestUpgrade(Application& app,
     auto& configEntry = configUpgradeSet.updatedEntry.emplace_back();
     configEntry.configSettingID(CONFIG_SETTING_STATE_ARCHIVAL);
     configEntry.stateArchivalSettings() = sas;
-    return makeConfigUpgradeSet(ltx, configUpgradeSet);
+    return makeConfigUpgradeSet(app, ltx, configUpgradeSet);
 }
 
 LedgerKey
@@ -311,7 +312,7 @@ testListUpgrades(VirtualClock::system_time_point preferredUpgradeDatetime,
         makeTxCountUpgrade(cfg.TESTING_UPGRADE_MAX_TX_SET_SIZE);
     auto baseReserveUpgrade =
         makeBaseReserveUpgrade(cfg.TESTING_UPGRADE_RESERVE);
-    LedgerTxn ltx(app->getLedgerTxnRoot());
+    LedgerTxn ltx(app->getTestLedgerTxn());
     SECTION("protocol version upgrade needed")
     {
         header.ledgerVersion--;
@@ -638,21 +639,23 @@ TEST_CASE("config upgrade validation", "[upgrades]")
 
     SECTION("expired config upgrade entry")
     {
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         // This will attempt to construct an upgrade set from an expired
         // entry. This is invalid, so the returned upgrade set should be
         // null.
         REQUIRE(makeMaxContractSizeBytesTestUpgrade(
+            *app,
                     ltx, 32768, /*expiredEntry=*/true) == nullptr);
     }
 
     SECTION("PERSISTENT config upgrade entry")
     {
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         // This will attempt to construct an upgrade set from a PERSISTENT
         // entry. This is invalid, so the returned upgrade set should be
         // null.
         REQUIRE(makeMaxContractSizeBytesTestUpgrade(
+            *app,
                     ltx, 32768, /*expiredEntry=*/false,
                     ContractDataDurability::PERSISTENT) == nullptr);
     }
@@ -660,8 +663,8 @@ TEST_CASE("config upgrade validation", "[upgrades]")
     ConfigUpgradeSetFrameConstPtr configUpgradeSet;
     Upgrades::UpgradeParameters scheduledUpgrades;
     {
-        LedgerTxn ltx(app->getLedgerTxnRoot());
-        configUpgradeSet = makeMaxContractSizeBytesTestUpgrade(ltx, 32768);
+        LedgerTxn ltx(app->getTestLedgerTxn());
+        configUpgradeSet = makeMaxContractSizeBytesTestUpgrade(*app, ltx, 32768);
 
         scheduledUpgrades.mUpgradeTime = genesis(0, 1);
         scheduledUpgrades.mConfigUpgradeSetKey = configUpgradeSet->getKey();
@@ -671,7 +674,7 @@ TEST_CASE("config upgrade validation", "[upgrades]")
 
     SECTION("validate for apply")
     {
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         LedgerUpgrade outUpgrade;
         SECTION("valid")
         {
@@ -700,7 +703,7 @@ TEST_CASE("config upgrade validation", "[upgrades]")
                 ConfigUpgradeSet badConfigUpgradeSet;
                 auto testInvalidXdr = [&]() {
                     auto configUpgradeSetFrame =
-                        makeConfigUpgradeSet(ltx, badConfigUpgradeSet);
+                        makeConfigUpgradeSet(*app, ltx, badConfigUpgradeSet);
                     REQUIRE(configUpgradeSetFrame->isValidForApply() ==
                             Upgrades::UpgradeValidity::XDR_INVALID);
                     REQUIRE(Upgrades::isValidForApply(
@@ -770,7 +773,7 @@ TEST_CASE("config upgrade validation", "[upgrades]")
         {
             REQUIRE(Upgrades::isValidForApply(
                         toUpgradeType(makeConfigUpgrade(
-                            *makeMaxContractSizeBytesTestUpgrade(ltx, 0))),
+                            *makeMaxContractSizeBytesTestUpgrade(*app, ltx, 0))),
                         outUpgrade, *app, ltx,
                         header) == Upgrades::UpgradeValidity::INVALID);
         }
@@ -798,9 +801,9 @@ TEST_CASE("config upgrade validation", "[upgrades]")
             {
                 ConfigUpgradeSetFrameConstPtr upgradeSet;
                 {
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     upgradeSet =
-                        makeMaxContractSizeBytesTestUpgrade(ltx, 12345);
+                        makeMaxContractSizeBytesTestUpgrade(*app, ltx, 12345);
                     ltx.commit();
                 }
 
@@ -846,15 +849,15 @@ TEST_CASE("config upgrades applied to ledger", "[soroban][upgrades]")
     {
         ConfigUpgradeSetFrameConstPtr configUpgradeSet;
         {
-            LedgerTxn ltx2(app->getLedgerTxnRoot());
-            configUpgradeSet = makeMaxContractSizeBytesTestUpgrade(ltx2, 32768);
+            LedgerTxn ltx2(app->getTestLedgerTxn());
+            configUpgradeSet = makeMaxContractSizeBytesTestUpgrade(*app, ltx2, 32768);
             ltx2.commit();
         }
 
         REQUIRE(configUpgradeSet);
         executeUpgrade(*app, makeConfigUpgrade(*configUpgradeSet));
 
-        LedgerTxn ltx2(app->getLedgerTxnRoot());
+        LedgerTxn ltx2(app->getTestLedgerTxn());
         auto maxContractSizeEntry =
             ltx2.load(getMaxContractSizeKey()).current().data.configSetting();
         REQUIRE(maxContractSizeEntry.configSettingID() ==
@@ -867,7 +870,7 @@ TEST_CASE("config upgrades applied to ledger", "[soroban][upgrades]")
         auto populateValuesAndUpgradeSize = [&](uint32_t size) {
             ConfigUpgradeSetFrameConstPtr configUpgradeSet;
             {
-                LedgerTxn ltx2(app->getLedgerTxnRoot());
+                LedgerTxn ltx2(app->getTestLedgerTxn());
                 auto& cfg =
                     app->getLedgerManager().getMutableSorobanNetworkConfig();
 
@@ -944,7 +947,7 @@ TEST_CASE("config upgrades applied to ledger", "[soroban][upgrades]")
             std::deque<uint64_t> initialWindow;
             ConfigUpgradeSetFrameConstPtr configUpgradeSet;
             {
-                LedgerTxn ltx2(app->getLedgerTxnRoot());
+                LedgerTxn ltx2(app->getTestLedgerTxn());
 
                 auto const& cfg =
                     app->getLedgerManager().getSorobanNetworkConfig();
@@ -1013,8 +1016,8 @@ TEST_CASE("config upgrades applied to ledger", "[soroban][upgrades]")
             configEntry2.configSettingID(
                 CONFIG_SETTING_CONTRACT_HISTORICAL_DATA_V0);
             configEntry2.contractHistoricalData().feeHistorical1KB = 555;
-            LedgerTxn ltx2(app->getLedgerTxnRoot());
-            configUpgradeSet = makeConfigUpgradeSet(ltx2, configUpgradeSetXdr);
+            LedgerTxn ltx2(app->getTestLedgerTxn());
+            configUpgradeSet = makeConfigUpgradeSet(*app, ltx2, configUpgradeSetXdr);
             ltx2.commit();
         }
         executeUpgrade(*app, makeConfigUpgrade(*configUpgradeSet));
@@ -1032,7 +1035,7 @@ TEST_CASE("config upgrades applied to ledger", "[soroban][upgrades]")
         // This just test one setting. We should test more.
         auto upgrade = [&](uint32_t min, uint32_t upgradeVal) {
             ConfigUpgradeSetFrameConstPtr configUpgradeSet;
-            LedgerTxn ltx2(app->getLedgerTxnRoot());
+            LedgerTxn ltx2(app->getTestLedgerTxn());
             // Copy current settings
             LedgerKey key(CONFIG_SETTING);
             key.configSetting().configSettingID =
@@ -1043,7 +1046,7 @@ TEST_CASE("config upgrades applied to ledger", "[soroban][upgrades]")
 
             ConfigUpgradeSet configUpgradeSetXdr;
             configUpgradeSetXdr.updatedEntry.emplace_back(configSetting);
-            configUpgradeSet = makeConfigUpgradeSet(ltx2, configUpgradeSetXdr);
+            configUpgradeSet = makeConfigUpgradeSet(*app, ltx2, configUpgradeSetXdr);
             ltx2.commit();
 
             executeUpgrade(*app, makeConfigUpgrade(*configUpgradeSet));
@@ -1116,7 +1119,7 @@ TEST_CASE("upgrade to version 10", "[upgrades]")
 
     auto getLiabilities = [&](TestAccount& acc) {
         Liabilities res;
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         auto account = stellar::loadAccount(ltx, acc.getPublicKey());
         res.selling = getSellingLiabilities(ltx.loadHeader(), account);
         res.buying = getBuyingLiabilities(ltx.loadHeader(), account);
@@ -1126,7 +1129,7 @@ TEST_CASE("upgrade to version 10", "[upgrades]")
         Liabilities res;
         if (acc.hasTrustLine(asset))
         {
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             auto trust = stellar::loadTrustLine(ltx, acc.getPublicKey(), asset);
             res.selling = trust.getSellingLiabilities(ltx.loadHeader());
             res.buying = trust.getBuyingLiabilities(ltx.loadHeader());
@@ -2269,7 +2272,7 @@ TEST_CASE("configuration initialized in version upgrade", "[upgrades]")
                    makeProtocolVersionUpgrade(
                        static_cast<uint32_t>(SOROBAN_PROTOCOL_VERSION) - 1));
     {
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         REQUIRE(!ltx.load(getMaxContractSizeKey()));
     }
 
@@ -2277,7 +2280,7 @@ TEST_CASE("configuration initialized in version upgrade", "[upgrades]")
     executeUpgrade(*app, makeProtocolVersionUpgrade(
                              static_cast<uint32_t>(SOROBAN_PROTOCOL_VERSION)));
 
-    LedgerTxn ltx(app->getLedgerTxnRoot());
+    LedgerTxn ltx(app->getTestLedgerTxn());
     auto maxContractSizeEntry =
         ltx.load(getMaxContractSizeKey()).current().data.configSetting();
     REQUIRE(maxContractSizeEntry.configSettingID() ==
@@ -2315,6 +2318,7 @@ TEST_CASE_VERSIONS("upgrade base reserve", "[upgrades]")
 {
     VirtualClock clock;
     auto cfg = getTestConfig(0);
+    cfg.DEPRECATED_SQL_LEDGER_STATE = true;
 
     auto app = createTestApplication(clock, cfg);
 
@@ -2336,7 +2340,7 @@ TEST_CASE_VERSIONS("upgrade base reserve", "[upgrades]")
 
     auto getLiabilities = [&](TestAccount& acc) {
         Liabilities res;
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         auto account = stellar::loadAccount(ltx, acc.getPublicKey());
         res.selling = getSellingLiabilities(ltx.loadHeader(), account);
         res.buying = getBuyingLiabilities(ltx.loadHeader(), account);
@@ -2346,7 +2350,7 @@ TEST_CASE_VERSIONS("upgrade base reserve", "[upgrades]")
         Liabilities res;
         if (acc.hasTrustLine(asset))
         {
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             auto trust = stellar::loadTrustLine(ltx, acc.getPublicKey(), asset);
             res.selling = trust.getSellingLiabilities(ltx.loadHeader());
             res.buying = trust.getBuyingLiabilities(ltx.loadHeader());
@@ -2354,12 +2358,12 @@ TEST_CASE_VERSIONS("upgrade base reserve", "[upgrades]")
         return res;
     };
     auto getNumSponsoringEntries = [&](TestAccount& acc) {
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         auto account = stellar::loadAccount(ltx, acc.getPublicKey());
         return getNumSponsoring(account.current());
     };
     auto getNumSponsoredEntries = [&](TestAccount& acc) {
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         auto account = stellar::loadAccount(ltx, acc.getPublicKey());
         return getNumSponsored(account.current());
     };
@@ -2471,7 +2475,7 @@ TEST_CASE_VERSIONS("upgrade base reserve", "[upgrades]")
         });
 
         auto submitTx = [&](TransactionFrameBasePtr tx) {
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             TransactionMetaFrame txm(ltx.loadHeader().current().ledgerVersion);
             REQUIRE(tx->checkValid(*app, ltx, 0, 0, 0));
             REQUIRE(tx->apply(*app, ltx, txm));
@@ -3025,8 +3029,8 @@ TEST_CASE("upgrades serialization roundtrip", "[upgrades]")
     initUpgrades.mProtocolVersion = std::make_optional<uint32>(20);
 
     {
-        LedgerTxn ltx(app->getLedgerTxnRoot());
-        auto configUpgradeSet = makeMaxContractSizeBytesTestUpgrade(ltx, 32768);
+        LedgerTxn ltx(app->getTestLedgerTxn());
+        auto configUpgradeSet = makeMaxContractSizeBytesTestUpgrade(*app, ltx, 32768);
         initUpgrades.mConfigUpgradeSetKey = configUpgradeSet->getKey();
         ltx.commit();
     }

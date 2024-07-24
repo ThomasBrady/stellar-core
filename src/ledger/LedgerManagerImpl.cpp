@@ -277,6 +277,9 @@ LedgerManagerImpl::startNewLedger()
 static void
 setLedgerTxnHeader(LedgerHeader const& lh, Application& app)
 {
+#ifdef BUILD_TESTS
+    app.resetTestLedgerTxn();
+#endif
     LedgerTxn ltx(app.getLedgerTxnRoot());
     ltx.loadHeader().current() = lh;
     ltx.commit();
@@ -795,7 +798,10 @@ LedgerManagerImpl::closeLedger(LedgerCloseData const& ledgerData)
     LogSlowExecution closeLedgerTime{"closeLedger",
                                      LogSlowExecution::Mode::MANUAL, "",
                                      std::chrono::milliseconds::max()};
-
+#ifdef BUILD_TESTS
+    //LedgerTxn ltx(mApp.getTestLedgerTxn());
+    mApp.resetTestLedgerTxn();
+#endif
     LedgerTxn ltx(mApp.getLedgerTxnRoot());
     auto header = ltx.loadHeader();
     auto initialLedgerVers = header.current().ledgerVersion;

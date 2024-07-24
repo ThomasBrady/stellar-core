@@ -33,7 +33,7 @@ TestAccount::updateSequenceNumber()
 {
     if (mSn == 0)
     {
-        LedgerTxn ltx(mApp.getLedgerTxnRoot());
+        LedgerTxn ltx(mApp.getTestLedgerTxn());
         auto entry = stellar::loadAccount(ltx, getPublicKey());
         if (entry)
         {
@@ -45,7 +45,7 @@ TestAccount::updateSequenceNumber()
 uint32_t
 TestAccount::getTrustlineFlags(Asset const& asset) const
 {
-    LedgerTxn ltx(mApp.getLedgerTxnRoot());
+    LedgerTxn ltx(mApp.getTestLedgerTxn());
     auto trust = ltx.load(trustlineKey(getPublicKey(), asset));
     REQUIRE(trust);
     return trust.current().data.trustLine().flags;
@@ -54,7 +54,7 @@ TestAccount::getTrustlineFlags(Asset const& asset) const
 int64_t
 TestAccount::getTrustlineBalance(Asset const& asset) const
 {
-    LedgerTxn ltx(mApp.getLedgerTxnRoot());
+    LedgerTxn ltx(mApp.getTestLedgerTxn());
     auto trustLine = stellar::loadTrustLine(ltx, getPublicKey(), asset);
     REQUIRE(trustLine);
     return trustLine.getBalance();
@@ -63,7 +63,7 @@ TestAccount::getTrustlineBalance(Asset const& asset) const
 int64_t
 TestAccount::getTrustlineBalance(PoolID const& poolID) const
 {
-    LedgerTxn ltx(mApp.getLedgerTxnRoot());
+    LedgerTxn ltx(mApp.getTestLedgerTxn());
     TrustLineAsset asset(ASSET_TYPE_POOL_SHARE);
     asset.liquidityPoolID() = poolID;
     auto trustLine = ltx.load(trustlineKey(getPublicKey(), asset));
@@ -74,7 +74,7 @@ TestAccount::getTrustlineBalance(PoolID const& poolID) const
 int64_t
 TestAccount::getBalance() const
 {
-    LedgerTxn ltx(mApp.getLedgerTxnRoot());
+    LedgerTxn ltx(mApp.getTestLedgerTxn());
     auto entry = stellar::loadAccount(ltx, getPublicKey());
     return entry.current().data.account().balance;
 }
@@ -82,7 +82,7 @@ TestAccount::getBalance() const
 int64_t
 TestAccount::getAvailableBalance() const
 {
-    LedgerTxn ltx(mApp.getLedgerTxnRoot());
+    LedgerTxn ltx(mApp.getTestLedgerTxn());
     auto entry = stellar::loadAccount(ltx, getPublicKey());
     auto header = ltx.loadHeader();
 
@@ -92,7 +92,7 @@ TestAccount::getAvailableBalance() const
 uint32_t
 TestAccount::getNumSubEntries() const
 {
-    LedgerTxn ltx(mApp.getLedgerTxnRoot());
+    LedgerTxn ltx(mApp.getTestLedgerTxn());
     auto entry = stellar::loadAccount(ltx, getPublicKey());
     return entry.current().data.account().numSubEntries;
 }
@@ -135,7 +135,7 @@ TestAccount::create(SecretKey const& secretKey, uint64_t initialBalance)
 
     std::unique_ptr<LedgerEntry> destBefore;
     {
-        LedgerTxn ltx(mApp.getLedgerTxnRoot());
+        LedgerTxn ltx(mApp.getTestLedgerTxn());
         auto entry = stellar::loadAccount(ltx, publicKey);
         if (entry)
         {
@@ -145,11 +145,13 @@ TestAccount::create(SecretKey const& secretKey, uint64_t initialBalance)
 
     try
     {
-        applyTx(tx({createAccount(publicKey, initialBalance)}), mApp);
+        auto createAcc = createAccount(publicKey, initialBalance);
+        auto txn = tx({createAcc});
+        applyTx(txn, mApp);
     }
     catch (...)
     {
-        LedgerTxn ltx(mApp.getLedgerTxnRoot());
+        LedgerTxn ltx(mApp.getTestLedgerTxn());
         auto destAfter = stellar::loadAccount(ltx, publicKey);
         // check that the target account didn't change
         REQUIRE(!!destBefore == !!destAfter);
@@ -161,7 +163,7 @@ TestAccount::create(SecretKey const& secretKey, uint64_t initialBalance)
     }
 
     {
-        LedgerTxn ltx(mApp.getLedgerTxnRoot());
+        LedgerTxn ltx(mApp.getTestLedgerTxn());
         REQUIRE(stellar::loadAccount(ltx, publicKey));
     }
     return TestAccount{mApp, secretKey};
@@ -178,7 +180,7 @@ TestAccount::merge(PublicKey const& into)
 {
     applyTx(tx({accountMerge(into)}), mApp);
 
-    LedgerTxn ltx(mApp.getLedgerTxnRoot());
+    LedgerTxn ltx(mApp.getTestLedgerTxn());
     REQUIRE(stellar::loadAccount(ltx, into));
     REQUIRE(!stellar::loadAccount(ltx, getPublicKey()));
 }
@@ -295,7 +297,7 @@ TestAccount::loadTrustLine(Asset const& asset) const
 TrustLineEntry
 TestAccount::loadTrustLine(TrustLineAsset const& asset) const
 {
-    LedgerTxn ltx(mApp.getLedgerTxnRoot());
+    LedgerTxn ltx(mApp.getTestLedgerTxn());
     LedgerKey key(TRUSTLINE);
     key.trustLine().accountID = getPublicKey();
     key.trustLine().asset = asset;
@@ -311,7 +313,7 @@ TestAccount::hasTrustLine(Asset const& asset) const
 bool
 TestAccount::hasTrustLine(TrustLineAsset const& asset) const
 {
-    LedgerTxn ltx(mApp.getLedgerTxnRoot());
+    LedgerTxn ltx(mApp.getTestLedgerTxn());
     LedgerKey key(TRUSTLINE);
     key.trustLine().accountID = getPublicKey();
     key.trustLine().asset = asset;
@@ -329,7 +331,7 @@ TestAccount::manageData(std::string const& name, DataValue* value)
 {
     applyTx(tx({txtest::manageData(name, value)}), mApp);
 
-    LedgerTxn ls(mApp.getLedgerTxnRoot());
+    LedgerTxn ls(mApp.getTestLedgerTxn());
     auto data = stellar::loadData(ls, getPublicKey(), name);
     if (value)
     {
@@ -347,7 +349,7 @@ TestAccount::bumpSequence(SequenceNumber to)
 {
     applyTx(tx({txtest::bumpSequence(to)}), mApp, false);
 
-    LedgerTxn ltx(mApp.getLedgerTxnRoot());
+    LedgerTxn ltx(mApp.getTestLedgerTxn());
     if (protocolVersionStartsFrom(ltx.loadHeader().current().ledgerVersion,
                                   ProtocolVersion::V_19))
     {
@@ -378,7 +380,7 @@ TestAccount::createClaimableBalance(Asset const& asset, int64_t amount,
     // validate balanceID returned is what we expect
     REQUIRE(returnedBalanceID == getBalanceID(0));
 
-    LedgerTxn ltx(mApp.getLedgerTxnRoot());
+    LedgerTxn ltx(mApp.getTestLedgerTxn());
     auto entry = stellar::loadClaimableBalance(ltx, returnedBalanceID);
     REQUIRE(entry);
 
@@ -398,7 +400,7 @@ TestAccount::claimClaimableBalance(ClaimableBalanceID const& balanceID)
 {
     applyTx(tx({txtest::claimClaimableBalance(balanceID)}), mApp);
 
-    LedgerTxn ltx(mApp.getLedgerTxnRoot());
+    LedgerTxn ltx(mApp.getTestLedgerTxn());
     REQUIRE(!stellar::loadClaimableBalance(ltx, balanceID));
 }
 
@@ -457,7 +459,7 @@ TestAccount::pay(PublicKey const& destination, int64_t amount)
 {
     std::unique_ptr<LedgerEntry> toAccount;
     {
-        LedgerTxn ltx(mApp.getLedgerTxnRoot());
+        LedgerTxn ltx(mApp.getTestLedgerTxn());
         auto toAccountEntry = stellar::loadAccount(ltx, destination);
         toAccount =
             toAccountEntry
@@ -481,7 +483,7 @@ TestAccount::pay(PublicKey const& destination, int64_t amount)
     }
     catch (...)
     {
-        LedgerTxn ltx(mApp.getLedgerTxnRoot());
+        LedgerTxn ltx(mApp.getTestLedgerTxn());
         auto toAccountAfter = stellar::loadAccount(ltx, destination);
         // check that the target account didn't change
         REQUIRE(!!toAccount == !!toAccountAfter);
@@ -494,7 +496,7 @@ TestAccount::pay(PublicKey const& destination, int64_t amount)
         throw;
     }
 
-    LedgerTxn ltx(mApp.getLedgerTxnRoot());
+    LedgerTxn ltx(mApp.getTestLedgerTxn());
     auto toAccountAfter = stellar::loadAccount(ltx, destination);
     REQUIRE(toAccount);
     REQUIRE(toAccountAfter);
@@ -575,7 +577,7 @@ TestAccount::clawbackClaimableBalance(ClaimableBalanceID const& balanceID)
 {
     applyTx(tx({txtest::clawbackClaimableBalance(balanceID)}), mApp);
 
-    LedgerTxn ltx(mApp.getLedgerTxnRoot());
+    LedgerTxn ltx(mApp.getTestLedgerTxn());
     REQUIRE(!stellar::loadClaimableBalance(ltx, balanceID));
 }
 

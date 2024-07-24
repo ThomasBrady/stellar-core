@@ -184,7 +184,7 @@ TEST_CASE("sponsorship invariant", "[invariant][sponsorshipcountisvalid]")
                 auto sponsoring =
                     doNumSponsoring(*initSponsoring, 2, updateNumSponsoring);
 
-                LedgerTxn ltx(app->getLedgerTxnRoot());
+                LedgerTxn ltx(app->getTestLedgerTxn());
                 prepareState(ltx, {*initSponsoring});
                 bool res = updateNumSponsoring && updateNumSponsored &&
                            updateSponsoring;
@@ -208,7 +208,7 @@ TEST_CASE("sponsorship invariant", "[invariant][sponsorshipcountisvalid]")
                         *initSponsored, testutil::computeMultiplier(*entry),
                         updateNumSponsored);
 
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     prepareState(ltx, {*initSponsoring, *initSponsored});
                     bool res = updateNumSponsoring && updateNumSponsored &&
                                updateSponsoring;
@@ -228,7 +228,7 @@ TEST_CASE("sponsorship invariant", "[invariant][sponsorshipcountisvalid]")
                     *initSponsoring, testutil::computeMultiplier(*entry),
                     updateNumSponsoring);
 
-                LedgerTxn ltx(app->getLedgerTxnRoot());
+                LedgerTxn ltx(app->getTestLedgerTxn());
                 prepareState(ltx, {*initSponsoring});
                 bool res = updateNumSponsoring && updateSponsoring;
                 REQUIRE(res == check(ltx, {{entry, nullptr},
@@ -265,7 +265,7 @@ TEST_CASE("sponsorship invariant", "[invariant][sponsorshipcountisvalid]")
             auto sponsoring =
                 doNumSponsoring(*initSponsoring, 1, updateNumSponsoring);
 
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             prepareState(ltx, {*initEntry, *initSponsoring});
             bool res =
                 updateNumSponsoring && updateNumSponsored && updateSponsoring;
@@ -299,7 +299,7 @@ TEST_CASE("sponsorship invariant", "[invariant][sponsorshipcountisvalid]")
             auto initSponsoring2 = createAccount(sponsoringID2, true);
             auto sponsoring2 = doNumSponsoring(*initSponsoring2, 2);
 
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             prepareState(ltx, {*initEntry, *initSponsoring1, *initSponsoring2});
             REQUIRE(check(
                 ltx, {{entry1, initEntry}, {sponsoring1, initSponsoring1}}));
@@ -325,7 +325,7 @@ TEST_CASE("sponsorship invariant", "[invariant][sponsorshipcountisvalid]")
             auto sponsored = doNumSponsored(
                 *initSponsored, testutil::computeMultiplier(*entry2));
 
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             prepareState(ltx, {*initEntry, *initSponsoring1, *initSponsoring2,
                                *initSponsored});
             REQUIRE(check(ltx, {{entry1, initEntry},
@@ -351,7 +351,7 @@ TEST_CASE("sponsorship invariant", "[invariant][sponsorshipcountisvalid]")
             auto sponsoring2 = doNumSponsoring(
                 *initSponsoring2, testutil::computeMultiplier(*entry2));
 
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             prepareState(ltx, {*initEntry, *initSponsoring1, *initSponsoring2});
             REQUIRE(check(
                 ltx, {{entry1, initEntry}, {sponsoring1, initSponsoring1}}));
@@ -378,7 +378,7 @@ TEST_CASE("sponsorship invariant", "[invariant][sponsorshipcountisvalid]")
         auto initSponsoring2 = createAccount(sponsoringID2, true);
         auto sponsoring2 = doNumSponsoring(*initSponsoring2, 1);
 
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         prepareState(ltx, {*initEntry, *initSponsoring1, *initSponsoring2});
         REQUIRE(
             check(ltx, {{entry1, initEntry}, {sponsoring1, initSponsoring1}}));
@@ -404,7 +404,7 @@ TEST_CASE("sponsorship invariant", "[invariant][sponsorshipcountisvalid]")
                 auto sponsoring =
                     doNumSponsoring(*initSponsoring, -2, updateNumSponsoring);
 
-                LedgerTxn ltx(app->getLedgerTxnRoot());
+                LedgerTxn ltx(app->getTestLedgerTxn());
                 prepareState(ltx, {*initEntry, *initSponsoring});
                 bool res = updateNumSponsoring && updateNumSponsored &&
                            updateSponsoring;
@@ -430,7 +430,7 @@ TEST_CASE("sponsorship invariant", "[invariant][sponsorshipcountisvalid]")
                                        -testutil::computeMultiplier(*initEntry),
                                        updateNumSponsored);
 
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     prepareState(ltx,
                                  {*initEntry, *initSponsoring, *initSponsored});
                     bool res = updateNumSponsoring && updateNumSponsored &&
@@ -452,7 +452,7 @@ TEST_CASE("sponsorship invariant", "[invariant][sponsorshipcountisvalid]")
                     *initSponsoring, -testutil::computeMultiplier(*initEntry),
                     updateNumSponsoring);
 
-                LedgerTxn ltx(app->getLedgerTxnRoot());
+                LedgerTxn ltx(app->getTestLedgerTxn());
                 prepareState(ltx, {*initEntry, *initSponsoring});
                 bool res = updateNumSponsoring && updateSponsoring;
                 REQUIRE(res == check(ltx, {{nullptr, initEntry},
@@ -489,7 +489,7 @@ TEST_CASE("sponsorship invariant", "[invariant][sponsorshipcountisvalid]")
             auto initSponsoring =
                 doNumSponsoring(*sponsoring, 1, updateNumSponsoring);
 
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             prepareState(ltx, {*initEntry, *initSponsoring});
             bool res =
                 updateNumSponsoring && updateNumSponsored && updateSponsoring;
@@ -513,7 +513,7 @@ TEST_CASE("sponsorship invariant", "[invariant][sponsorshipcountisvalid]")
         auto initEntry2 = createEntry(OFFER, sponsoredID);
         initEntry2 = doSponsoring(*initEntry2, sponsoringID);
 
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         prepareState(ltx, {*initEntry2});
         REQUIRE(check(ltx, {{entry1, nullptr}, {nullptr, initEntry2}}));
     }

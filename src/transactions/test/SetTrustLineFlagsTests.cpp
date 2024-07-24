@@ -73,7 +73,7 @@ getBalance(TestAccount const& account, Asset const& asset)
 static uint32_t
 getNumSponsoring(Application& app, TestAccount const& account)
 {
-    LedgerTxn ltx(app.getLedgerTxnRoot());
+    LedgerTxn ltx(app.getTestLedgerTxn());
 
     auto ltxe = loadAccount(ltx, account.getPublicKey(), true);
     return getNumSponsoring(ltxe.current());
@@ -82,7 +82,7 @@ getNumSponsoring(Application& app, TestAccount const& account)
 static uint32_t
 getNumSponsored(Application& app, TestAccount const& account)
 {
-    LedgerTxn ltx(app.getLedgerTxnRoot());
+    LedgerTxn ltx(app.getTestLedgerTxn());
 
     auto ltxe = loadAccount(ltx, account.getPublicKey(), true);
     return getNumSponsored(ltxe.current());
@@ -98,14 +98,15 @@ checkNumSponsoring(Application& app, TestAccount const& account,
 static uint32_t
 getNumOffers(Application& app, TestAccount const& account, Asset const& asset)
 {
-    LedgerTxn ltx(app.getLedgerTxnRoot());
+    LedgerTxn ltx(app.getTestLedgerTxn());
     auto s = ltx.getOffersByAccountAndAsset(account, asset).size();
     return static_cast<uint32_t>(s);
 }
 
 TEST_CASE_VERSIONS("set trustline flags", "[tx][settrustlineflags]")
 {
-    auto const& cfg = getTestConfig();
+    auto cfg = getTestConfig();
+    cfg.DEPRECATED_SQL_LEDGER_STATE = true;
 
     VirtualClock clock;
     auto app = createTestApplication(clock, cfg);
@@ -564,7 +565,7 @@ TEST_CASE_VERSIONS("revoke from pool",
                     // Pool should be deleted since the last pool share
                     // trustline was deleted
                     {
-                        LedgerTxn ltx(app->getLedgerTxnRoot());
+                        LedgerTxn ltx(app->getTestLedgerTxn());
                         REQUIRE(!loadLiquidityPool(ltx, poolID));
                     }
 
@@ -666,7 +667,7 @@ TEST_CASE_VERSIONS("revoke from pool",
                     // Pool should be deleted since the last pool share
                     // trustline was deleted
                     {
-                        LedgerTxn ltx(app->getLedgerTxnRoot());
+                        LedgerTxn ltx(app->getTestLedgerTxn());
                         REQUIRE(!loadLiquidityPool(ltx, poolBtc1));
                     }
 
@@ -700,7 +701,7 @@ TEST_CASE_VERSIONS("revoke from pool",
                     // Pool should be deleted since the last pool share
                     // trustline was deleted
                     {
-                        LedgerTxn ltx(app->getLedgerTxnRoot());
+                        LedgerTxn ltx(app->getTestLedgerTxn());
                         REQUIRE(!loadLiquidityPool(ltx, pool1Usd));
                     }
 
@@ -956,7 +957,7 @@ TEST_CASE_VERSIONS("revoke from pool",
                                   ex_CLAIM_CLAIMABLE_BALANCE_DOES_NOT_EXIST);
 
                 {
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     REQUIRE(!loadLiquidityPool(ltx, pool12));
 
                     // make sure this account isn't sponsoring any claimable
@@ -1147,7 +1148,7 @@ TEST_CASE_VERSIONS("revoke from pool",
                                 {acc1});
 
                             {
-                                LedgerTxn ltx(app->getLedgerTxnRoot());
+                                LedgerTxn ltx(app->getTestLedgerTxn());
                                 TransactionMetaFrame txm(
                                     ltx.loadHeader().current().ledgerVersion);
                                 REQUIRE(tx->checkValid(*app, ltx, 0, 0, 0));
@@ -1157,7 +1158,7 @@ TEST_CASE_VERSIONS("revoke from pool",
                             }
 
                             {
-                                LedgerTxn ltx(app->getLedgerTxnRoot());
+                                LedgerTxn ltx(app->getTestLedgerTxn());
                                 auto tlAsset =
                                     changeTrustAssetToTrustLineAsset(share12);
                                 checkSponsorship(ltx,
@@ -1208,7 +1209,7 @@ TEST_CASE_VERSIONS("revoke from pool",
                             changeTrustAssetToTrustLineAsset(share12)));
 
                         {
-                            LedgerTxn ltx(app->getLedgerTxnRoot());
+                            LedgerTxn ltx(app->getTestLedgerTxn());
                             REQUIRE(!loadLiquidityPool(ltx, pool12));
                         }
                     };
@@ -1244,7 +1245,7 @@ TEST_CASE_VERSIONS("revoke from pool",
                             getNumSponsored(*app, acc1) > 0;
 
                         {
-                            LedgerTxn ltx(app->getLedgerTxnRoot());
+                            LedgerTxn ltx(app->getTestLedgerTxn());
                             TransactionMetaFrame txm(
                                 ltx.loadHeader().current().ledgerVersion);
                             REQUIRE(tx->checkValid(*app, ltx, 0, 0, 0));
@@ -1323,7 +1324,7 @@ TEST_CASE_VERSIONS("revoke from pool",
 
                     root.denyTrust(cur1, acc1, flagOp);
                     {
-                        LedgerTxn ltx(app->getLedgerTxnRoot());
+                        LedgerTxn ltx(app->getTestLedgerTxn());
                         // verify that acc1 lost two numSubEntries and 2
                         // numSponsored due to the deleted sponsored pool share
                         // trustline, while acc3 ends up with the same state due
@@ -1418,7 +1419,7 @@ TEST_CASE_VERSIONS("revoke from pool",
                         changeTrustAssetToTrustLineAsset(shareNative1)));
 
                     {
-                        LedgerTxn ltx(app->getLedgerTxnRoot());
+                        LedgerTxn ltx(app->getTestLedgerTxn());
                         REQUIRE(!loadLiquidityPool(ltx, pool12));
                         REQUIRE(!loadLiquidityPool(ltx, poolNative1));
 
@@ -1511,7 +1512,7 @@ TEST_CASE_VERSIONS("revoke from pool",
                              acc1.op(endSponsoringFutureReserves())},
                             {acc1});
 
-                        LedgerTxn ltx(app->getLedgerTxnRoot());
+                        LedgerTxn ltx(app->getTestLedgerTxn());
                         TransactionMetaFrame txm(
                             ltx.loadHeader().current().ledgerVersion);
                         REQUIRE(tx->checkValid(*app, ltx, 0, 0, 0));
@@ -1547,7 +1548,7 @@ TEST_CASE_VERSIONS("revoke from pool",
                     // Pool should be deleted since the last pool share
                     // trustline was deleted
                     {
-                        LedgerTxn ltx(app->getLedgerTxnRoot());
+                        LedgerTxn ltx(app->getTestLedgerTxn());
                         REQUIRE(!loadLiquidityPool(ltx, poolID));
                     }
 

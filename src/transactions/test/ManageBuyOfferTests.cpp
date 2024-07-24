@@ -371,7 +371,7 @@ TEST_CASE_VERSIONS("manage buy offer liabilities", "[tx][offers]")
                 *app, SecretKey::pseudoRandomForTesting(), 1, {op});
 
             {
-                LedgerTxn ltx(app->getLedgerTxnRoot());
+                LedgerTxn ltx(app->getTestLedgerTxn());
                 tx->checkValid(*app, ltx, 0, 0, 0);
             }
 
@@ -435,7 +435,9 @@ TEST_CASE_VERSIONS("manage buy offer exactly crosses existing offers",
                    "[tx][offers]")
 {
     VirtualClock clock;
-    auto app = createTestApplication(clock, getTestConfig());
+    auto cfg = getTestConfig();
+    cfg.DEPRECATED_SQL_LEDGER_STATE = true;
+    auto app = createTestApplication(clock, cfg);
 
     int64_t const txfee = app->getLedgerManager().getLastTxFee();
     int64_t const minBalancePlusFees =
@@ -468,7 +470,7 @@ TEST_CASE_VERSIONS("manage buy offer exactly crosses existing offers",
             a2.manageBuyOffer(0, cur2, cur1, price, amount,
                               MANAGE_OFFER_DELETED);
 
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             REQUIRE(!stellar::loadOffer(ltx, a1.getPublicKey(), offerID));
         }
     };
@@ -512,7 +514,7 @@ TEST_CASE_VERSIONS(
     auto checkOffer = [&](AccountID const& acc, int64_t offerID,
                           Asset const& selling, Asset const& buying,
                           Price const& price) {
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         auto offer = stellar::loadOffer(ltx, acc, offerID);
         auto const& oe = offer.current().data.offer();
         REQUIRE(oe.selling == selling);
@@ -642,7 +644,7 @@ TEST_CASE_VERSIONS(
     auto checkOffer = [&](AccountID const& acc, int64_t offerID,
                           Asset const& selling, Asset const& buying,
                           Price const& price) {
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         auto offer = stellar::loadOffer(ltx, acc, offerID);
         auto const& oe = offer.current().data.offer();
         REQUIRE(oe.selling == selling);
@@ -652,7 +654,7 @@ TEST_CASE_VERSIONS(
     };
 
     auto checkTrustLine = [&](AccountID const& acc, Asset const& asset) {
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         auto trust = stellar::loadTrustLine(ltx, acc, asset);
         return trust.getBalance();
     };
@@ -795,7 +797,7 @@ TEST_CASE_VERSIONS(
     auto checkOffer = [&](AccountID const& acc, int64_t offerID,
                           Asset const& selling, Asset const& buying,
                           Price const& price) {
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         auto offer = stellar::loadOffer(ltx, acc, offerID);
         auto const& oe = offer.current().data.offer();
         REQUIRE(oe.selling == selling);
@@ -805,7 +807,7 @@ TEST_CASE_VERSIONS(
     };
 
     auto checkTrustLine = [&](AccountID const& acc, Asset const& asset) {
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         auto trust = stellar::loadTrustLine(ltx, acc, asset);
         return trust.getBalance();
     };
@@ -946,7 +948,7 @@ TEST_CASE_VERSIONS("manage buy offer with zero liabilities", "[tx][offers]")
     a2.changeTrust(cur1, 100);
 
     auto checkTrustLine = [&](AccountID const& acc, Asset const& asset) {
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         auto trust = stellar::loadTrustLine(ltx, acc, asset);
         return trust.getBalance();
     };

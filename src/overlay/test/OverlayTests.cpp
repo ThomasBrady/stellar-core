@@ -346,7 +346,7 @@ TEST_CASE("flow control byte capacity", "[overlay][flowcontrol]")
         auto upgradeApp = [&](Application::pointer app, uint32 maxTxSize) {
             ConfigUpgradeSetFrameConstPtr res;
             {
-                LedgerTxn ltx(app->getLedgerTxnRoot());
+                LedgerTxn ltx(app->getTestLedgerTxn());
                 ConfigUpgradeSet configUpgradeSet;
                 auto& configEntry =
                     configUpgradeSet.updatedEntry.emplace_back();
@@ -357,7 +357,7 @@ TEST_CASE("flow control byte capacity", "[overlay][flowcontrol]")
                 configEntry.contractBandwidth().txMaxSizeBytes = maxTxSize;
                 configEntry.contractBandwidth().ledgerMaxTxsSizeBytes =
                     maxTxSize * 10;
-                res = txtest::makeConfigUpgradeSet(ltx, configUpgradeSet);
+                res = txtest::makeConfigUpgradeSet(*app, ltx, configUpgradeSet);
                 ltx.commit();
             }
             txtest::executeUpgrade(*app, txtest::makeConfigUpgrade(*res));

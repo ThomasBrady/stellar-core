@@ -43,6 +43,7 @@ class WorkScheduler;
 class BanManager;
 class StatusManager;
 class AbstractLedgerTxnParent;
+class AbstractLedgerTxn;
 class BasicWork;
 enum class LoadGenMode;
 struct GeneratedLoadConfig;
@@ -301,6 +302,10 @@ class Application
     virtual Hash const& getNetworkID() const = 0;
 
     virtual AbstractLedgerTxnParent& getLedgerTxnRoot() = 0;
+#ifdef BUILD_TESTS
+    virtual AbstractLedgerTxnParent& getTestLedgerTxn() = 0;
+    virtual void resetTestLedgerTxn() = 0;
+#endif
 
     virtual void validateAndLogConfig() = 0;
 

@@ -139,7 +139,7 @@ TEST_CASE_VERSIONS("standalone", "[herder][acceptance]")
             {
                 bool hasC = false;
                 {
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     hasC = protocolVersionStartsFrom(
                         ltx.loadHeader().current().ledgerVersion,
                         ProtocolVersion::V_10);
@@ -731,7 +731,7 @@ TEST_CASE_VERSIONS("txset with PreconditionsV2", "[herder][txset]")
         SECTION("minSeqNum gap")
         {
             {
-                LedgerTxn ltx(app->getLedgerTxnRoot());
+                LedgerTxn ltx(app->getTestLedgerTxn());
                 if (ltx.loadHeader().current().ledgerVersion >=
                     static_cast<uint32_t>(SOROBAN_PROTOCOL_VERSION))
                 {
@@ -766,7 +766,7 @@ TEST_CASE_VERSIONS("txset with PreconditionsV2", "[herder][txset]")
         SECTION("minSeqLedgerGap")
         {
             {
-                LedgerTxn ltx(app->getLedgerTxnRoot());
+                LedgerTxn ltx(app->getTestLedgerTxn());
                 if (ltx.loadHeader().current().ledgerVersion >=
                     static_cast<uint32_t>(SOROBAN_PROTOCOL_VERSION))
                 {
@@ -1121,7 +1121,7 @@ TEST_CASE("txset base fee", "[herder][txset]")
 
         LedgerHeader lhCopy;
         {
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             lhCopy = ltx.loadHeader().current();
         }
 
@@ -1408,7 +1408,7 @@ surgeTest(uint32 protocolVersion, uint32_t nbTxs, uint32_t maxTxSetSize,
 
     LedgerHeader lhCopy;
     {
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         lhCopy = ltx.loadHeader().current();
     }
 
@@ -1966,7 +1966,7 @@ TEST_CASE("surge pricing with DEX separation", "[herder][txset]")
 
     LedgerHeader lhCopy;
     {
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         lhCopy = ltx.loadHeader().current();
     }
 
@@ -2155,7 +2155,7 @@ TEST_CASE("surge pricing with DEX separation holds invariants",
 
         LedgerHeader lhCopy;
         {
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             lhCopy = ltx.loadHeader().current();
         }
 
@@ -3526,7 +3526,7 @@ TEST_CASE("tx queue source account limit", "[herder][transactionqueue]")
         // applied
         REQUIRE(!node->getHerder().isBannedTx(tx2->getFullHash()));
         // Only first account is in the ledger
-        LedgerTxn ltx(node->getLedgerTxnRoot());
+        LedgerTxn ltx(node->getTestLedgerTxn());
         REQUIRE(stellar::loadAccount(ltx, a1.getPublicKey()));
         REQUIRE(!stellar::loadAccount(ltx, b1.getPublicKey()));
     }
@@ -3549,7 +3549,7 @@ TEST_CASE("tx queue source account limit", "[herder][transactionqueue]")
         REQUIRE(node->getHerder().getTx(tx2->getFullHash()) == nullptr);
         REQUIRE(node->getHerder().isBannedTx(tx2->getFullHash()));
         // Both accounts are in the ledger
-        LedgerTxn ltx(node->getLedgerTxnRoot());
+        LedgerTxn ltx(node->getTestLedgerTxn());
         REQUIRE(stellar::loadAccount(ltx, a1.getPublicKey()));
         REQUIRE(stellar::loadAccount(ltx, b1.getPublicKey()));
     }
@@ -4168,13 +4168,13 @@ setupUpgradeAtNextLedger(Application& app)
     }
     else
     {
-        LedgerTxn ltx(app.getLedgerTxnRoot());
+        LedgerTxn ltx(app.getTestLedgerTxn());
         ConfigUpgradeSetFrameConstPtr configUpgradeSet;
         ConfigUpgradeSet configUpgradeSetXdr;
         auto& configEntry = configUpgradeSetXdr.updatedEntry.emplace_back();
         configEntry.configSettingID(CONFIG_SETTING_CONTRACT_HISTORICAL_DATA_V0);
         configEntry.contractHistoricalData().feeHistorical1KB = 1234;
-        configUpgradeSet = makeConfigUpgradeSet(ltx, configUpgradeSetXdr);
+        configUpgradeSet = makeConfigUpgradeSet(app, ltx, configUpgradeSetXdr);
 
         scheduledUpgrades.mConfigUpgradeSetKey = configUpgradeSet->getKey();
         ltx.commit();
@@ -4197,6 +4197,7 @@ herderExternalizesValuesWithProtocol(uint32_t version)
     auto simulation = std::make_shared<Simulation>(
         Simulation::OVER_LOOPBACK, networkID, [version](int i) {
             auto cfg = getTestConfig(i, Config::TESTDB_ON_DISK_SQLITE);
+            cfg.DEPRECATED_SQL_LEDGER_STATE = true;
             cfg.TESTING_UPGRADE_LEDGER_PROTOCOL_VERSION = version;
             return cfg;
         });

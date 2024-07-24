@@ -147,14 +147,14 @@ TEST_CASE_VERSIONS("set options", "[tx][setoptions]")
         SECTION("non-account signers")
         {
             auto countSubEntriesAndSigners = [&](uint32_t expected) {
-                LedgerTxn ltx(app->getLedgerTxnRoot());
+                LedgerTxn ltx(app->getTestLedgerTxn());
                 auto a1Account = stellar::loadAccount(ltx, a1);
                 auto const& ae = a1Account.current().data.account();
                 REQUIRE(ae.numSubEntries == expected);
                 REQUIRE(ae.signers.size() == expected);
             };
             auto checkFirstSigner = [&](Signer const& sk) {
-                LedgerTxn ltx(app->getLedgerTxnRoot());
+                LedgerTxn ltx(app->getTestLedgerTxn());
                 auto a1Account = stellar::loadAccount(ltx, a1);
                 auto const& ae = a1Account.current().data.account();
                 REQUIRE(ae.signers.size() >= 1);
@@ -355,7 +355,7 @@ TEST_CASE_VERSIONS("set options", "[tx][setoptions]")
                          acc1.op(setOptions(setSigner(makeSigner(s2, 1))))},
                         {acc1.getSecretKey()});
 
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     TransactionMetaFrame txm(
                         ltx.loadHeader().current().ledgerVersion);
                     REQUIRE(tx->checkValid(*app, ltx, 0, 0, 0));
@@ -395,7 +395,7 @@ TEST_CASE_VERSIONS("set options", "[tx][setoptions]")
                         {acc1.op(setOptions(setSigner(makeSigner(s3, 0))))},
                         {acc1.getSecretKey()});
 
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     TransactionMetaFrame txm(
                         ltx.loadHeader().current().ledgerVersion);
                     REQUIRE(tx->checkValid(*app, ltx, 0, 0, 0));
@@ -426,7 +426,7 @@ TEST_CASE_VERSIONS("set options", "[tx][setoptions]")
                               return lhs.first.key < rhs.first.key;
                           });
 
-                LedgerTxn ltx(app->getLedgerTxnRoot());
+                LedgerTxn ltx(app->getTestLedgerTxn());
                 auto rootAcc = stellar::loadAccount(ltx, root.getPublicKey());
                 auto const& ae = rootAcc.current().data.account();
 
@@ -494,7 +494,7 @@ TEST_CASE_VERSIONS("set options", "[tx][setoptions]")
 
                 auto tx = transactionFrameFromOps(app->getNetworkID(), root,
                                                   ops, keys);
-                LedgerTxn ltx(app->getLedgerTxnRoot());
+                LedgerTxn ltx(app->getTestLedgerTxn());
                 TransactionMetaFrame txm(
                     ltx.loadHeader().current().ledgerVersion);
                 REQUIRE(tx->checkValid(*app, ltx, 0, 0, 0));

@@ -200,7 +200,7 @@ TEST_CASE("onOperationApply fail succeed", "[invariant]")
         app->getInvariantManager().enableInvariant(
             TestInvariant::toString(0, true));
 
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         REQUIRE_THROWS_AS(app->getInvariantManager().checkOnOperationApply(
                               {}, res, ltx.getDelta()),
                           InvariantDoesNotHold);
@@ -211,7 +211,7 @@ TEST_CASE("onOperationApply fail succeed", "[invariant]")
         app->getInvariantManager().enableInvariant(
             TestInvariant::toString(0, false));
 
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         REQUIRE_NOTHROW(app->getInvariantManager().checkOnOperationApply(
             {}, res, ltx.getDelta()));
     }

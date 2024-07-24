@@ -942,14 +942,14 @@ TEST_CASE_VERSIONS("bucket apply", "[bucket]")
         CLOG_INFO(Bucket, "Applying bucket with {} live entries", live.size());
         birth->apply(*app);
         {
-            auto count = app->getLedgerTxnRoot().countObjects(ACCOUNT);
+            auto count = app->getTestLedgerTxn().countObjects(ACCOUNT);
             REQUIRE(count == live.size() + 1 /* root account */);
         }
 
         CLOG_INFO(Bucket, "Applying bucket with {} dead entries", dead.size());
         death->apply(*app);
         {
-            auto count = app->getLedgerTxnRoot().countObjects(ACCOUNT);
+            auto count = app->getTestLedgerTxn().countObjects(ACCOUNT);
             REQUIRE(count == 1 /* root account */);
         }
     });

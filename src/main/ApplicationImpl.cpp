@@ -350,6 +350,9 @@ ApplicationImpl::initialize(bool createNewDB, bool forceRebuild)
             mConfig.BEST_OFFER_DEBUGGING_ENABLED
 #endif
         );
+#ifdef BUILD_TESTS
+        //mTestLedgerTxn = std::make_unique<LedgerTxn>(*mLedgerTxnRoot);
+#endif
 
         BucketListIsConsistentWithDatabase::registerInvariant(*this);
     }
@@ -1234,6 +1237,31 @@ ApplicationImpl::getLoadGenerator()
         mLoadGenerator = std::make_unique<LoadGenerator>(*this);
     }
     return *mLoadGenerator;
+}
+
+AbstractLedgerTxnParent&
+ApplicationImpl::getTestLedgerTxn()
+{
+    auto cfg = getConfig();
+    if (cfg.MODE_USES_IN_MEMORY_LEDGER)
+    {
+        return *mNeverCommittingLedgerTxn;
+    }
+    if (!mTestLedgerTxn)
+    {
+        mTestLedgerTxn = std::make_unique<LedgerTxn>(*mLedgerTxnRoot);
+    }
+    
+    return *mTestLedgerTxn;
+}
+
+void ApplicationImpl::resetTestLedgerTxn()
+{
+    if (mTestLedgerTxn)
+    {
+        mTestLedgerTxn->commit();
+        mTestLedgerTxn.reset();
+    }
 }
 #endif
 

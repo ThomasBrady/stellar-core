@@ -51,7 +51,7 @@ TEST_CASE_VERSIONS("create account", "[tx][createaccount]")
                 app->getNetworkID(), root,
                 {root.op(createAccount(key.getPublicKey(), 1))}, {});
 
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             REQUIRE(!tx1->checkValid(*app, ltx, 0, 0, 0));
             REQUIRE(getCreateAccountResultCode(tx1, 0) ==
                     CREATE_ACCOUNT_MALFORMED);
@@ -69,7 +69,7 @@ TEST_CASE_VERSIONS("create account", "[tx][createaccount]")
                 app->getNetworkID(), root,
                 {root.op(createAccount(key.getPublicKey(), 0))}, {});
 
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             REQUIRE(!tx1->checkValid(*app, ltx, 0, 0, 0));
             REQUIRE(getCreateAccountResultCode(tx1, 0) ==
                     CREATE_ACCOUNT_MALFORMED);
@@ -85,7 +85,7 @@ TEST_CASE_VERSIONS("create account", "[tx][createaccount]")
                 transactionFrameFromOps(app->getNetworkID(), root,
                                         {root.op(createAccount(root, -1))}, {});
 
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             REQUIRE(!tx->checkValid(*app, ltx, 0, 0, 0));
             REQUIRE(getCreateAccountResultCode(tx, 0) ==
                     CREATE_ACCOUNT_MALFORMED);
@@ -181,7 +181,7 @@ TEST_CASE_VERSIONS("create account", "[tx][createaccount]")
                 {key});
 
             {
-                LedgerTxn ltx(app->getLedgerTxnRoot());
+                LedgerTxn ltx(app->getTestLedgerTxn());
                 TransactionMetaFrame txm(
                     ltx.loadHeader().current().ledgerVersion);
                 REQUIRE(tx->checkValid(*app, ltx, 0, 0, 0));
@@ -190,7 +190,7 @@ TEST_CASE_VERSIONS("create account", "[tx][createaccount]")
             }
 
             {
-                LedgerTxn ltx(app->getLedgerTxnRoot());
+                LedgerTxn ltx(app->getTestLedgerTxn());
                 checkSponsorship(ltx, key.getPublicKey(), 1,
                                  &root.getPublicKey(), 0, 2, 0, 2);
                 checkSponsorship(ltx, root.getPublicKey(), 0, nullptr, 0, 2, 2,

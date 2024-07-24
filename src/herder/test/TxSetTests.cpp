@@ -33,7 +33,7 @@ TEST_CASE("generalized tx set XDR validation", "[txset]")
     GeneralizedTransactionSet xdrTxSet(1);
     xdrTxSet.v1TxSet().previousLedgerHash =
         app->getLedgerManager().getLastClosedLedgerHeader().hash;
-    LedgerTxn ltx(app->getLedgerTxnRoot());
+    LedgerTxn ltx(app->getTestLedgerTxn());
     SECTION("no phases")
     {
         auto txSet = TxSetXDRFrame::makeFromWire(xdrTxSet);
@@ -519,7 +519,7 @@ TEST_CASE("generalized tx set XDR conversion", "[txset]")
         auto txSetFrame = TxSetXDRFrame::makeFromWire(txSetXdr);
         ApplicableTxSetFrameConstPtr applicableFrame;
         {
-            LedgerTxn ltx(app->getLedgerTxnRoot(), false,
+            LedgerTxn ltx(app->getTestLedgerTxn(), false,
                           TransactionMode::READ_ONLY_WITHOUT_SQL_TXN);
             applicableFrame = txSetFrame->prepareForApply(*app);
         }
@@ -843,7 +843,7 @@ TEST_CASE("generalized tx set fees", "[txset][soroban]")
             auto tx = createUploadWasmTx(*app, source, inclusionFee,
                                          resourceFee, resources);
             REQUIRE(tx->getInclusionFee() == inclusionFee);
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             if (validateTx)
             {
                 REQUIRE(tx->checkValid(*app, ltx, 0, 0, 0));

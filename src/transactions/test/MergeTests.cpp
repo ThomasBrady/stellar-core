@@ -35,6 +35,7 @@ using namespace stellar::txtest;
 TEST_CASE_VERSIONS("merge", "[tx][merge]")
 {
     Config cfg(getTestConfig());
+    cfg.DEPRECATED_SQL_LEDGER_STATE = true;
 
     VirtualClock clock;
     auto app = createTestApplication(clock, cfg);
@@ -489,7 +490,7 @@ TEST_CASE_VERSIONS("merge", "[tx][merge]")
                 a1.merge(b1);
 
                 {
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     REQUIRE(!stellar::loadAccount(ltx, a1.getPublicKey()));
                 }
             });
@@ -507,7 +508,7 @@ TEST_CASE_VERSIONS("merge", "[tx][merge]")
                 checkTx(1, r, txNO_ACCOUNT);
 
                 {
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     REQUIRE(!stellar::loadAccount(ltx, a1.getPublicKey()));
                 }
 
@@ -595,7 +596,7 @@ TEST_CASE_VERSIONS("merge", "[tx][merge]")
         for_versions_from(10, *app, [&]() {
             SequenceNumber curStartSeqNum;
             {
-                LedgerTxn ltx(app->getLedgerTxnRoot());
+                LedgerTxn ltx(app->getTestLedgerTxn());
 
                 // every operation will result in a ledger close, so take the
                 // next bumpSequence into account
@@ -634,7 +635,7 @@ TEST_CASE_VERSIONS("merge", "[tx][merge]")
         for_versions_from(19, *app, [&]() {
             SequenceNumber curStartSeqNum;
             {
-                LedgerTxn ltx(app->getLedgerTxnRoot());
+                LedgerTxn ltx(app->getTestLedgerTxn());
                 ltx.loadHeader().current().ledgerSeq += 1;
                 curStartSeqNum = getStartingSequenceNumber(ltx.loadHeader());
             }
@@ -725,7 +726,7 @@ TEST_CASE_VERSIONS("merge", "[tx][merge]")
             acc2.merge(acc1);
 
             {
-                LedgerTxn ltx(app->getLedgerTxnRoot());
+                LedgerTxn ltx(app->getTestLedgerTxn());
                 auto header = ltx.loadHeader();
                 auto account = stellar::loadAccount(ltx, acc1.getPublicKey());
                 auto const& ae = account.current().data.account();
@@ -753,7 +754,7 @@ TEST_CASE_VERSIONS("merge", "[tx][merge]")
                     {sponsoringAcc});
 
                 {
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     TransactionMetaFrame txm(
                         ltx.loadHeader().current().ledgerVersion);
                     REQUIRE(tx->checkValid(*app, ltx, 0, 0, 0));
@@ -780,7 +781,7 @@ TEST_CASE_VERSIONS("merge", "[tx][merge]")
                 SECTION("into non-sponsoring account")
                 {
                     a1.merge(b1);
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     checkSponsorship(ltx, sponsoringAcc, 0, nullptr, 0, 2, 0,
                                      0);
                 }
@@ -790,14 +791,14 @@ TEST_CASE_VERSIONS("merge", "[tx][merge]")
                                                 ProtocolVersion::V_16))
                     {
                         REQUIRE_THROWS(a1.merge(sponsoringAcc));
-                        LedgerTxn ltx(app->getLedgerTxnRoot());
+                        LedgerTxn ltx(app->getTestLedgerTxn());
                         checkSponsorship(ltx, sponsoringAcc, 0, nullptr, 0, 2,
                                          1, 0);
                     }
                     else
                     {
                         REQUIRE_NOTHROW(a1.merge(sponsoringAcc));
-                        LedgerTxn ltx(app->getLedgerTxnRoot());
+                        LedgerTxn ltx(app->getTestLedgerTxn());
                         checkSponsorship(ltx, sponsoringAcc, 0, nullptr, 0, 2,
                                          0, 0);
                     }
@@ -816,7 +817,7 @@ TEST_CASE_VERSIONS("merge", "[tx][merge]")
                     {key});
 
                 {
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     TransactionMetaFrame txm(
                         ltx.loadHeader().current().ledgerVersion);
                     REQUIRE(tx->checkValid(*app, ltx, 0, 0, 0));
@@ -840,7 +841,7 @@ TEST_CASE_VERSIONS("merge", "[tx][merge]")
                     {
                         REQUIRE_THROWS(acc1.merge(dest));
 
-                        LedgerTxn ltx(app->getLedgerTxnRoot());
+                        LedgerTxn ltx(app->getTestLedgerTxn());
 
                         uint32_t numSponsoring = addSigner ? 3 : 2;
                         checkSponsorship(ltx, sponsoringAcc.getPublicKey(), 0,
@@ -850,7 +851,7 @@ TEST_CASE_VERSIONS("merge", "[tx][merge]")
                     {
                         REQUIRE_NOTHROW(acc1.merge(dest));
 
-                        LedgerTxn ltx(app->getLedgerTxnRoot());
+                        LedgerTxn ltx(app->getTestLedgerTxn());
                         checkSponsorship(ltx, sponsoringAcc.getPublicKey(), 0,
                                          nullptr, 0, 2, 0, 0);
                     }
@@ -888,7 +889,7 @@ TEST_CASE_VERSIONS("merge", "[tx][merge]")
                          b1.op(endSponsoringFutureReserves())},
                         {b1});
 
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     TransactionMetaFrame txm(
                         ltx.loadHeader().current().ledgerVersion);
                     REQUIRE(tx->checkValid(*app, ltx, 0, 0, 0));
@@ -911,7 +912,7 @@ TEST_CASE_VERSIONS("merge", "[tx][merge]")
                         {sponsoringAcc});
 
                     {
-                        LedgerTxn ltx(app->getLedgerTxnRoot());
+                        LedgerTxn ltx(app->getTestLedgerTxn());
                         TransactionMetaFrame txm(
                             ltx.loadHeader().current().ledgerVersion);
                         REQUIRE(tx->checkValid(*app, ltx, 0, 0, 0));
@@ -925,7 +926,7 @@ TEST_CASE_VERSIONS("merge", "[tx][merge]")
                     REQUIRE_THROWS_AS(sponsoringAcc.merge(b1),
                                       ex_ACCOUNT_MERGE_IS_SPONSOR);
 
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     checkSponsorship(ltx, sponsoringAcc, 0, nullptr, 0, 2, 1,
                                      0);
                 }

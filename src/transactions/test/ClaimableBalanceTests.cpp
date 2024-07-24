@@ -175,7 +175,7 @@ validateBalancesOnCreateAndClaim(TestAccount& createAcc, TestAccount& claimAcc,
              createAcc.op(endSponsoringFutureReserves())},
             {createAcc});
 
-        LedgerTxn ltx(app.getLedgerTxnRoot());
+        LedgerTxn ltx(app.getTestLedgerTxn());
         TransactionMetaFrame txm(ltx.loadHeader().current().ledgerVersion);
         REQUIRE(tx->checkValid(app, ltx, 0, 0, 0));
         REQUIRE(tx->apply(app, ltx, txm));
@@ -234,7 +234,7 @@ validateBalancesOnCreateAndClaim(TestAccount& createAcc, TestAccount& claimAcc,
              createAcc.op(endSponsoringFutureReserves())},
             {createAcc});
 
-        LedgerTxn ltx(app.getLedgerTxnRoot());
+        LedgerTxn ltx(app.getTestLedgerTxn());
         TransactionMetaFrame txm(ltx.loadHeader().current().ledgerVersion);
         REQUIRE(tx->checkValid(app, ltx, 0, 0, 0));
         REQUIRE(tx->apply(app, ltx, txm));
@@ -255,7 +255,7 @@ validateBalancesOnCreateAndClaim(TestAccount& createAcc, TestAccount& claimAcc,
              claimAcc.op(endSponsoringFutureReserves())},
             {claimAcc});
 
-        LedgerTxn ltx(app.getLedgerTxnRoot());
+        LedgerTxn ltx(app.getTestLedgerTxn());
         TransactionMetaFrame txm(ltx.loadHeader().current().ledgerVersion);
         REQUIRE(tx->checkValid(app, ltx, 0, 0, 0));
         REQUIRE(tx->apply(app, ltx, txm));
@@ -563,7 +563,7 @@ TEST_CASE_VERSIONS("claimableBalance", "[tx][claimablebalance]")
                 uint32_t dayInSeconds = 86400;
                 TimePoint nextCloseTime;
                 {
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
 
                     // closeLedgerOn will move close time forward by a day
                     // (86400 seconds)
@@ -878,7 +878,7 @@ TEST_CASE_VERSIONS("claimableBalance", "[tx][claimablebalance]")
                     // check that the original claimable balance still exists.
                     // The balance created in validateBalancesOnCreateAndClaim
                     // is the one that was claimed
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     REQUIRE(stellar::loadClaimableBalance(ltx, balanceID));
                 }
             }
@@ -1017,7 +1017,7 @@ TEST_CASE_VERSIONS("claimableBalance", "[tx][claimablebalance]")
             auto balanceID1 = acc1.getBalanceID(0);
             auto balanceID2 = acc1.getBalanceID(1);
 
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             auto entry1 =
                 stellar::loadClaimableBalance(ltx, acc1.getBalanceID(0));
             auto entry2 =
@@ -1162,7 +1162,7 @@ TEST_CASE_VERSIONS("claimableBalance", "[tx][claimablebalance]")
                  acc1.op(endSponsoringFutureReserves())},
                 {acc1});
 
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             TransactionMetaFrame txm(ltx.loadHeader().current().ledgerVersion);
             REQUIRE(tx->checkValid(*app, ltx, 0, 0, 0));
             REQUIRE(tx->apply(*app, ltx, txm));
@@ -1239,7 +1239,7 @@ TEST_CASE_VERSIONS("claimableBalance", "[tx][claimablebalance]")
                          acc2.op(endSponsoringFutureReserves())},
                         {acc2});
 
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     TransactionMetaFrame txm(
                         ltx.loadHeader().current().ledgerVersion);
                     REQUIRE(tx->checkValid(*app, ltx, 0, 0, 0));
@@ -1252,7 +1252,7 @@ TEST_CASE_VERSIONS("claimableBalance", "[tx][claimablebalance]")
 
                 uint32_t lastModifiedLedgerSeq;
                 {
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     lastModifiedLedgerSeq =
                         loadAccount(ltx, claimAccount.getPublicKey(), true)
                             .current()
@@ -1269,7 +1269,7 @@ TEST_CASE_VERSIONS("claimableBalance", "[tx][claimablebalance]")
                         app->getNetworkID(), root, {claimAccount.op(claimOp)},
                         {claimAccount});
 
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     TransactionMetaFrame txm2(
                         ltx.loadHeader().current().ledgerVersion);
                     REQUIRE(tx2->checkValid(*app, ltx, 0, 0, 0));
@@ -1284,7 +1284,7 @@ TEST_CASE_VERSIONS("claimableBalance", "[tx][claimablebalance]")
                 }
                 // The op source account was loaded in the last transaction
                 {
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     REQUIRE(lastModifiedLedgerSeq + 1 ==
                             loadAccount(ltx, claimAccount.getPublicKey(), true)
                                 .current()

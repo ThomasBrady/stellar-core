@@ -2711,7 +2711,40 @@ LedgerTxnRoot::Impl::commitChild(EntryIterator iter,
                                  LedgerTxnConsistency cons) noexcept
 {
     ZoneScoped;
-
+    //if (mApp.getConfig().ADD_TO_BUCKETLIST_ON_COMMIT) 
+    /*
+    std::vector<LedgerEntry> initEntries;
+    std::vector<LedgerEntry> liveEntries;
+    std::vector<LedgerKey> deadEntries;
+    while ((bool) iter)
+    {
+        if (iter.entryExists())
+        {
+            if (iter.entryPtr().isInit())
+            {
+                initEntries.emplace_back(iter.entry().ledgerEntry());
+            }
+            else
+            {
+                liveEntries.emplace_back(iter.entry().ledgerEntry());
+            }
+        }
+        else
+        {
+            deadEntries.emplace_back(iter.key().ledgerKey());
+        }
+        ++iter;
+    }
+    auto currLedgerVersion = mHeader->ledgerVersion;
+    auto currLedger = mHeader->ledgerSeq;
+    // ensure currLedger > 0
+    if (currLedger > 0)
+    {
+        mApp.getBucketManager().addBatch(mApp, currLedger, currLedgerVersion,  initEntries,
+                                                                liveEntries,
+                                                                deadEntries);
+    }
+    */
     // In this mode, where we do not start a SQL transaction, so we crash if
     // there's an attempt to commit, since the expected behavior is load and
     // rollback.

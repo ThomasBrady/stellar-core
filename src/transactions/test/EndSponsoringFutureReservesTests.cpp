@@ -46,7 +46,7 @@ TEST_CASE_VERSIONS("confirm and clear sponsor", "[tx][sponsorship]")
                 app->getNetworkID(), root,
                 {root.op(endSponsoringFutureReserves())}, {});
 
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             REQUIRE(!tx->checkValid(*app, ltx, 0, 0, 0));
 
             REQUIRE(getOperationResultCode(tx, 0) == opNOT_SUPPORTED);
@@ -61,7 +61,7 @@ TEST_CASE_VERSIONS("confirm and clear sponsor", "[tx][sponsorship]")
                 app->getNetworkID(), root,
                 {root.op(endSponsoringFutureReserves())}, {});
 
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             TransactionMetaFrame txm(ltx.loadHeader().current().ledgerVersion);
             REQUIRE(tx->checkValid(*app, ltx, 0, 0, 0));
             REQUIRE(!tx->apply(*app, ltx, txm));

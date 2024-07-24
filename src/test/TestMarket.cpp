@@ -250,7 +250,7 @@ void
 TestMarket::checkState(std::map<OfferKey, OfferState> const& offers,
                        std::vector<OfferKey> const& deletedOffers)
 {
-    LedgerTxn ltx(mApp.getLedgerTxnRoot());
+    LedgerTxn ltx(mApp.getTestLedgerTxn());
     for (auto const& o : offers)
     {
         auto offer = stellar::loadOffer(ltx, o.first.sellerID, o.first.offerID);

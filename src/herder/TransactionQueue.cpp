@@ -322,6 +322,9 @@ TransactionQueue::canAdd(TransactionFrameBasePtr tx,
             }
         }
     }
+#ifdef BUILD_TESTS
+    mApp.resetTestLedgerTxn();
+#endif
     LedgerTxn ltx(mApp.getLedgerTxnRoot(),
                   /* shouldUpdateLastModified */ true,
                   TransactionMode::READ_ONLY_WITHOUT_SQL_TXN);
@@ -1106,6 +1109,9 @@ SorobanTransactionQueue::broadcastSome()
 size_t
 SorobanTransactionQueue::getMaxQueueSizeOps() const
 {
+#ifdef BUILD_TESTS
+    mApp.resetTestLedgerTxn();
+#endif
     LedgerTxn ltx(mApp.getLedgerTxnRoot(),
                   /* shouldUpdateLastModified */ true,
                   TransactionMode::READ_ONLY_WITHOUT_SQL_TXN);

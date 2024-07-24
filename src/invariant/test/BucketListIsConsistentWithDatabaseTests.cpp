@@ -44,6 +44,7 @@ struct BucketListGenerator
         auto cfg = getTestConfig(0);
         cfg.OVERRIDE_EVICTION_PARAMS_FOR_TESTING = true;
         cfg.TESTING_STARTING_EVICTION_SCAN_LEVEL = 1;
+        //cfg.DEPRECATED_SQL_LEDGER_STATE = true;
         mAppGenerate = createTestApplication(mClock, cfg);
 
         auto skey = SecretKey::fromSeed(mAppGenerate->getNetworkID());
@@ -67,7 +68,7 @@ struct BucketListGenerator
             }
         }
 
-        LedgerTxn ltx(mAppGenerate->getLedgerTxnRoot(), false);
+        LedgerTxn ltx(mAppGenerate->getTestLedgerTxn(), false);
         REQUIRE(mLedgerSeq == ltx.loadHeader().current().ledgerSeq);
     }
 
@@ -88,8 +89,10 @@ struct BucketListGenerator
     applyBuckets(Args&&... args)
     {
         VirtualClock clock;
+        auto cfg = getTestConfig(1);
+        cfg.DEPRECATED_SQL_LEDGER_STATE = true;
         Application::pointer app =
-            createTestApplication(clock, getTestConfig(1));
+            createTestApplication(clock, cfg);
         applyBuckets<T, Args...>(app, std::forward<Args>(args)...);
     }
 
@@ -97,7 +100,7 @@ struct BucketListGenerator
     generateLedger()
     {
         auto& app = mAppGenerate;
-        LedgerTxn ltx(app->getLedgerTxnRoot(), false);
+        LedgerTxn ltx(app->getTestLedgerTxn(), false);
         REQUIRE(mLedgerSeq == ltx.loadHeader().current().ledgerSeq);
         mLedgerSeq = ++ltx.loadHeader().current().ledgerSeq;
         auto vers = ltx.loadHeader().current().ledgerVersion;
@@ -194,7 +197,7 @@ struct BucketListGenerator
         auto& blGenerate = mAppGenerate->getBucketManager().getBucketList();
         auto& bmApply = app->getBucketManager();
         MergeCounters mergeCounters;
-        LedgerTxn ltx(mAppGenerate->getLedgerTxnRoot(), false);
+        LedgerTxn ltx(mAppGenerate->getTestLedgerTxn(), false);
         auto vers = ltx.loadHeader().current().ledgerVersion;
         for (uint32_t i = 0; i <= BucketList::kNumLevels - 1; i++)
         {
@@ -340,7 +343,7 @@ class ApplyBucketsWorkAddEntry : public ApplyBucketsWork
         {
             uint32_t minLedger = mEntry.lastModifiedLedgerSeq;
             uint32_t maxLedger = std::numeric_limits<int32_t>::max() - 1;
-            auto& ltxRoot = mApp.getLedgerTxnRoot();
+            auto& ltxRoot = mApp.getTestLedgerTxn();
 
             size_t count = 0;
             for (auto let : xdr::xdr_traits<LedgerEntryType>::enum_values())
@@ -392,7 +395,7 @@ class ApplyBucketsWorkDeleteEntry : public ApplyBucketsWork
     {
         if (!mDeleted)
         {
-            LedgerTxn ltx(mApp.getLedgerTxnRoot(), false);
+            LedgerTxn ltx(mApp.getTestLedgerTxn(), false);
             auto entry = ltx.load(mKey);
             if (entry && entry.current() == mEntry)
             {
@@ -549,7 +552,7 @@ class ApplyBucketsWorkModifyEntry : public ApplyBucketsWork
     {
         if (!mModified)
         {
-            LedgerTxn ltx(mApp.getLedgerTxnRoot(), false);
+            LedgerTxn ltx(mApp.getTestLedgerTxn(), false);
             auto entry = ltx.load(mKey);
             while (entry && entry.current() == mEntry)
             {
@@ -919,13 +922,14 @@ TEST_CASE("BucketListIsConsistentWithDatabase merged LIVEENTRY and DEADENTRY",
     };
 
     auto exists = [](Application& app, LedgerEntry const& le) {
-        LedgerTxn ltx(app.getLedgerTxnRoot());
+        LedgerTxn ltx(app.getTestLedgerTxn());
         return (bool)ltx.load(LedgerEntryKey(le));
     };
 
     auto cfg = getTestConfig(1);
     cfg.OVERRIDE_EVICTION_PARAMS_FOR_TESTING = true;
     cfg.TESTING_STARTING_EVICTION_SCAN_LEVEL = 1;
+    //cfg.DEPRECATED_SQL_LEDGER_STATE = true;
 
     testutil::BucketListDepthModifier bldm(3);
     for (auto t : xdr::xdr_traits<LedgerEntryType>::enum_values())

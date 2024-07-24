@@ -121,7 +121,7 @@ TEST_CASE("OrderBookIsNotCrossed in-memory order book is consistent with "
     auto const cur1 = root.asset("CUR1");
     auto const cur2 = root.asset("CUR2");
 
-    LedgerTxn ltxOuter{app->getLedgerTxnRoot()};
+    LedgerTxn ltxOuter{app->getTestLedgerTxn()};
 
     auto const invariant = std::make_shared<OrderBookIsNotCrossed>();
     auto offer = InvariantTestUtils::generateOffer(cur1, cur2, 3, Price{3, 2});

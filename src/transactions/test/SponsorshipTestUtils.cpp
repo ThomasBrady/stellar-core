@@ -149,7 +149,7 @@ createSponsoredEntryButSponsorHasInsufficientBalance(
                  sponsoredAcc.op(endSponsoringFutureReserves())},
                 {sponsoringAcc.getSecretKey(), sponsoredAcc.getSecretKey()});
 
-            LedgerTxn ltx(app.getLedgerTxnRoot());
+            LedgerTxn ltx(app.getTestLedgerTxn());
             TransactionMetaFrame txm(ltx.loadHeader().current().ledgerVersion);
             REQUIRE(tx->checkValid(app, ltx, 0, 0, 0));
             REQUIRE(!tx->apply(app, ltx, txm));
@@ -204,7 +204,7 @@ createModifyAndRemoveSponsoredEntry(Application& app, TestAccount& sponsoredAcc,
         for_versions_from(ledgerVersionFrom, app, [&] {
             uint32_t nse;
             {
-                LedgerTxn ltx(app.getLedgerTxnRoot());
+                LedgerTxn ltx(app.getTestLedgerTxn());
                 auto ltxe = loadAccount(ltx, sponsoredAcc);
                 nse = ltxe.current().data.account().numSubEntries;
             }
@@ -253,7 +253,7 @@ createModifyAndRemoveSponsoredEntry(Application& app, TestAccount& sponsoredAcc,
             auto numReserves = getNumReservesRequiredForOperation(opCreate);
 
             {
-                LedgerTxn ltx(app.getLedgerTxnRoot());
+                LedgerTxn ltx(app.getTestLedgerTxn());
                 TransactionMetaFrame txm(
                     ltx.loadHeader().current().ledgerVersion);
                 REQUIRE(tx->checkValid(app, ltx, 0, 0, 0));
@@ -268,7 +268,7 @@ createModifyAndRemoveSponsoredEntry(Application& app, TestAccount& sponsoredAcc,
 
             // Modify sponsored entry
             {
-                LedgerTxn ltx2(app.getLedgerTxnRoot());
+                LedgerTxn ltx2(app.getTestLedgerTxn());
                 TransactionMetaFrame txm2(
                     ltx2.loadHeader().current().ledgerVersion);
                 REQUIRE(tx2->checkValid(app, ltx2, 0, 0, 0));
@@ -283,7 +283,7 @@ createModifyAndRemoveSponsoredEntry(Application& app, TestAccount& sponsoredAcc,
 
             // Modify sponsored entry while sponsored
             {
-                LedgerTxn ltx3(app.getLedgerTxnRoot());
+                LedgerTxn ltx3(app.getTestLedgerTxn());
                 TransactionMetaFrame txm3(2);
                 REQUIRE(tx3->checkValid(app, ltx3, 0, 0, 0));
                 REQUIRE(tx3->apply(app, ltx3, txm3));
@@ -298,7 +298,7 @@ createModifyAndRemoveSponsoredEntry(Application& app, TestAccount& sponsoredAcc,
 
             // Remove sponsored entry
             {
-                LedgerTxn ltx4(app.getLedgerTxnRoot());
+                LedgerTxn ltx4(app.getTestLedgerTxn());
                 TransactionMetaFrame txm4(2);
                 REQUIRE(tx4->checkValid(app, ltx4, 0, 0, 0));
                 REQUIRE(tx4->apply(app, ltx4, txm4));
@@ -396,7 +396,7 @@ submitTooManySponsoringTxs(Application& app, TestAccount& successfulOpAcc,
              successfulOp, successfulOpAcc.op(endSponsoringFutureReserves())},
             {successfulOpAcc});
 
-        LedgerTxn ltx(app.getLedgerTxnRoot());
+        LedgerTxn ltx(app.getTestLedgerTxn());
         TransactionMetaFrame txm1(ltx.loadHeader().current().ledgerVersion);
         REQUIRE(tx1->checkValid(app, ltx, 0, 0, 0));
         REQUIRE(tx1->apply(app, ltx, txm1));
@@ -410,7 +410,7 @@ submitTooManySponsoringTxs(Application& app, TestAccount& successfulOpAcc,
              failOpAcc.op(endSponsoringFutureReserves())},
             {failOpAcc});
 
-        LedgerTxn ltx(app.getLedgerTxnRoot());
+        LedgerTxn ltx(app.getTestLedgerTxn());
         TransactionMetaFrame txm2(ltx.loadHeader().current().ledgerVersion);
         REQUIRE(tx2->checkValid(app, ltx, 0, 0, 0));
         REQUIRE(!tx2->apply(app, ltx, txm2));
@@ -435,7 +435,7 @@ tooManySponsoring(Application& app, TestAccount& successfulOpAcc,
         {
             for_versions_from(minVersion, app, [&] {
                 {
-                    LedgerTxn ltx(app.getLedgerTxnRoot());
+                    LedgerTxn ltx(app.getTestLedgerTxn());
                     auto acc = stellar::loadAccount(ltx, root.getPublicKey());
                     auto& le = acc.current();
                     auto& ae = le.data.account();
@@ -457,7 +457,7 @@ tooManySponsoring(Application& app, TestAccount& successfulOpAcc,
         {
             for_versions(minVersion, 17, app, [&] {
                 {
-                    LedgerTxn ltx(app.getLedgerTxnRoot());
+                    LedgerTxn ltx(app.getTestLedgerTxn());
                     auto acc = stellar::loadAccount(ltx, root.getPublicKey());
                     auto& le = acc.current();
                     auto& ae = le.data.account();
@@ -484,7 +484,7 @@ tooManySponsoring(Application& app, TestAccount& successfulOpAcc,
         {
             for_versions_from(18, app, [&] {
                 {
-                    LedgerTxn ltx(app.getLedgerTxnRoot());
+                    LedgerTxn ltx(app.getTestLedgerTxn());
                     auto acc = stellar::loadAccount(ltx, root.getPublicKey());
                     auto& le = acc.current();
                     auto& ae = le.data.account();
@@ -539,7 +539,7 @@ submitTooManyNumSubEntries(Application& app, TestAccount& testAcc,
         auto tx1 = transactionFrameFromOps(app.getNetworkID(), testAcc,
                                            {successfulOp}, {});
 
-        LedgerTxn ltx(app.getLedgerTxnRoot());
+        LedgerTxn ltx(app.getTestLedgerTxn());
         TransactionMetaFrame txm1(ltx.loadHeader().current().ledgerVersion);
         REQUIRE(tx1->checkValid(app, ltx, 0, 0, 0));
         REQUIRE(tx1->apply(app, ltx, txm1));
@@ -550,7 +550,7 @@ submitTooManyNumSubEntries(Application& app, TestAccount& testAcc,
         auto tx2 =
             transactionFrameFromOps(app.getNetworkID(), testAcc, {failOp}, {});
 
-        LedgerTxn ltx(app.getLedgerTxnRoot());
+        LedgerTxn ltx(app.getTestLedgerTxn());
         TransactionMetaFrame txm2(ltx.loadHeader().current().ledgerVersion);
         REQUIRE(tx2->checkValid(app, ltx, 0, 0, 0));
         REQUIRE(!tx2->apply(app, ltx, txm2));
@@ -576,7 +576,7 @@ tooManySubentries(Application& app, TestAccount& testAcc,
         {
             for_versions_from(minVersion, app, [&] {
                 {
-                    LedgerTxn ltx(app.getLedgerTxnRoot());
+                    LedgerTxn ltx(app.getTestLedgerTxn());
                     auto acc =
                         stellar::loadAccount(ltx, testAcc.getPublicKey());
                     auto& le = acc.current();
@@ -595,7 +595,7 @@ tooManySubentries(Application& app, TestAccount& testAcc,
         {
             for_versions_from(18, app, [&] {
                 {
-                    LedgerTxn ltx(app.getLedgerTxnRoot());
+                    LedgerTxn ltx(app.getTestLedgerTxn());
                     auto acc =
                         stellar::loadAccount(ltx, testAcc.getPublicKey());
                     auto& le = acc.current();
