@@ -1474,7 +1474,7 @@ CommandHandler::testAcc(std::string const& params, std::string& retStr)
             key = getAccount(accName->second.c_str());
         }
 
-        LedgerTxn ltx(mApp.getLedgerTxnRoot(),
+        LedgerTxn ltx(mApp.getTestLedgerTxn(),
                       /* shouldUpdateLastModified */ false,
                       TransactionMode::READ_ONLY_WITHOUT_SQL_TXN);
 

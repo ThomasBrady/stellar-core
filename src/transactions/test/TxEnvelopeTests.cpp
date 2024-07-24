@@ -829,7 +829,7 @@ TEST_CASE_VERSIONS("txenvelope", "[tx][envelope]")
                         for_versions(3, 9, *app, [&] {
                             setup();
                             {
-                                LedgerTxn ltx(app->getLedgerTxnRoot());
+                                LedgerTxn ltx(app->getTestLedgerTxn());
                                 REQUIRE(!tx->checkValid(*app, ltx, 0, 0, 0));
                             }
                             REQUIRE(tx->getResultCode() == txBAD_SEQ);
@@ -1082,7 +1082,7 @@ TEST_CASE_VERSIONS("txenvelope", "[tx][envelope]")
                             REQUIRE(getAccountSigners(a1, *app).size() == 0);
 
                             {
-                                LedgerTxn ltx(app->getLedgerTxnRoot());
+                                LedgerTxn ltx(app->getTestLedgerTxn());
                                 REQUIRE(!stellar::loadAccount(ltx, b1));
                             }
                         });
@@ -1432,7 +1432,7 @@ TEST_CASE_VERSIONS("txenvelope", "[tx][envelope]")
                                  a1.op(endSponsoringFutureReserves())},
                                 {a1});
                             {
-                                LedgerTxn ltx(app->getLedgerTxnRoot());
+                                LedgerTxn ltx(app->getTestLedgerTxn());
                                 TransactionMetaFrame txm(
                                     ltx.loadHeader().current().ledgerVersion);
                                 REQUIRE(insideSignerTx->checkValid(*app, ltx, 0,
@@ -1451,7 +1451,7 @@ TEST_CASE_VERSIONS("txenvelope", "[tx][envelope]")
                                  a1.op(endSponsoringFutureReserves())},
                                 {a1});
                             {
-                                LedgerTxn ltx(app->getLedgerTxnRoot());
+                                LedgerTxn ltx(app->getTestLedgerTxn());
                                 TransactionMetaFrame txm(
                                     ltx.loadHeader().current().ledgerVersion);
                                 REQUIRE(outsideSignerTx->checkValid(*app, ltx,
@@ -1463,7 +1463,7 @@ TEST_CASE_VERSIONS("txenvelope", "[tx][envelope]")
                             }
 
                             {
-                                LedgerTxn ltx(app->getLedgerTxnRoot());
+                                LedgerTxn ltx(app->getTestLedgerTxn());
                                 checkSponsorship(ltx, a1.getPublicKey(),
                                                  signer1.key, 2,
                                                  &root.getPublicKey());
@@ -1491,7 +1491,7 @@ TEST_CASE_VERSIONS("txenvelope", "[tx][envelope]")
 
                             if (alternative.autoRemove)
                             {
-                                LedgerTxn ltx(app->getLedgerTxnRoot());
+                                LedgerTxn ltx(app->getTestLedgerTxn());
                                 checkSponsorship(ltx, root.getPublicKey(), 0,
                                                  nullptr, 0, 2, 2, 0);
                                 checkSponsorship(ltx, a2.getPublicKey(), 0,
@@ -1678,7 +1678,7 @@ TEST_CASE_VERSIONS("txenvelope", "[tx][envelope]")
                 setFullFee(tx, 1000);
 
                 {
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     REQUIRE(!tx->checkValid(*app, ltx, 0, 0, 0));
                 }
 
@@ -1702,7 +1702,7 @@ TEST_CASE_VERSIONS("txenvelope", "[tx][envelope]")
                         tx->addSignature(a1);
 
                         {
-                            LedgerTxn ltx(app->getLedgerTxnRoot());
+                            LedgerTxn ltx(app->getTestLedgerTxn());
                             REQUIRE(!tx->checkValid(*app, ltx, 0, 0, 0));
                         }
                         applyCheck(tx, *app);
@@ -1716,7 +1716,7 @@ TEST_CASE_VERSIONS("txenvelope", "[tx][envelope]")
                         tx->addSignature(a1);
 
                         {
-                            LedgerTxn ltx(app->getLedgerTxnRoot());
+                            LedgerTxn ltx(app->getTestLedgerTxn());
                             REQUIRE(tx->checkValid(*app, ltx, 0, 0, 0));
                         }
                         applyCheck(tx, *app);
@@ -1733,7 +1733,7 @@ TEST_CASE_VERSIONS("txenvelope", "[tx][envelope]")
                         tx->addSignature(b1);
 
                         {
-                            LedgerTxn ltx(app->getLedgerTxnRoot());
+                            LedgerTxn ltx(app->getTestLedgerTxn());
                             REQUIRE(tx->checkValid(*app, ltx, 0, 0, 0));
                         }
                         applyCheck(tx, *app);
@@ -1758,7 +1758,7 @@ TEST_CASE_VERSIONS("txenvelope", "[tx][envelope]")
                         tx->addSignature(b1);
 
                         {
-                            LedgerTxn ltx(app->getLedgerTxnRoot());
+                            LedgerTxn ltx(app->getTestLedgerTxn());
                             REQUIRE(!tx->checkValid(*app, ltx, 0, 0, 0));
                         }
 
@@ -1785,7 +1785,7 @@ TEST_CASE_VERSIONS("txenvelope", "[tx][envelope]")
                         tx->addSignature(b1);
 
                         {
-                            LedgerTxn ltx(app->getLedgerTxnRoot());
+                            LedgerTxn ltx(app->getTestLedgerTxn());
                             REQUIRE(tx->checkValid(*app, ltx, 0, 0, 0));
                         }
 
@@ -1811,7 +1811,7 @@ TEST_CASE_VERSIONS("txenvelope", "[tx][envelope]")
                         tx->addSignature(b1);
 
                         {
-                            LedgerTxn ltx(app->getLedgerTxnRoot());
+                            LedgerTxn ltx(app->getTestLedgerTxn());
                             REQUIRE(tx->checkValid(*app, ltx, 0, 0, 0));
                         }
 
@@ -1903,7 +1903,7 @@ TEST_CASE_VERSIONS("txenvelope", "[tx][envelope]")
                 for_versions_to(9, *app, [&] {
                     setup();
                     {
-                        LedgerTxn ltx(app->getLedgerTxnRoot());
+                        LedgerTxn ltx(app->getTestLedgerTxn());
                         REQUIRE(!txFrame->checkValid(*app, ltx, 0, 0, 0));
                     }
                     REQUIRE(txFrame->getResultCode() == txBAD_SEQ);
@@ -1991,7 +1991,7 @@ TEST_CASE_VERSIONS("txenvelope", "[tx][envelope]")
                                 getSignatures(txFrame).clear();
                                 txFrame->addSignature(root);
                                 {
-                                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                                    LedgerTxn ltx(app->getTestLedgerTxn());
                                     REQUIRE(txFrame->checkValid(
                                                 *app, ltx, 0, lowerBound, 0) ==
                                             expectSuccess);
@@ -2072,7 +2072,7 @@ TEST_CASE_VERSIONS("txenvelope", "[tx][envelope]")
                                 txFrame->addSignature(root);
 
                                 {
-                                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                                    LedgerTxn ltx(app->getTestLedgerTxn());
                                     REQUIRE(txFrame->checkValid(*app, ltx, 0, 0,
                                                                 offset));
                                 }
@@ -2085,7 +2085,7 @@ TEST_CASE_VERSIONS("txenvelope", "[tx][envelope]")
                                 setMaxTime(txFrame, upperBoundCloseTime - 1);
 
                                 {
-                                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                                    LedgerTxn ltx(app->getTestLedgerTxn());
                                     REQUIRE(!txFrame->checkValid(*app, ltx, 0,
                                                                  0, offset));
                                 }
@@ -2114,7 +2114,7 @@ TEST_CASE_VERSIONS("txenvelope", "[tx][envelope]")
                         root.tx({payment(a1.getPublicKey(), paymentAmount)});
                     setSeqNum(txFrame, txFrame->getSeqNum() - 1);
                     {
-                        LedgerTxn ltx(app->getLedgerTxnRoot());
+                        LedgerTxn ltx(app->getTestLedgerTxn());
                         REQUIRE(!txFrame->checkValid(*app, ltx, 0, 0, 0));
                     }
 
@@ -2478,7 +2478,7 @@ TEST_CASE("soroban txs not allowed before protocol upgrade",
     auto tx =
         sorobanTransactionFrameFromOps(app->getNetworkID(), root, {op}, {},
                                        SorobanResources(), 1000, 1'000'000);
-    LedgerTxn ltx(app->getLedgerTxnRoot());
+    LedgerTxn ltx(app->getTestLedgerTxn());
     REQUIRE(!tx->checkValid(*app, ltx, 0, 0, 0));
     REQUIRE(tx->getResult().result.code() == txMALFORMED);
 }
@@ -2500,7 +2500,7 @@ TEST_CASE_VERSIONS("Soroban extension for non-Soroban tx",
         payment.asset.type(ASSET_TYPE_NATIVE);
         auto tx = sorobanTransactionFrameFromOps(app->getNetworkID(), root,
                                                  {op}, {}, resources, 100, 100);
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         if (protocolVersionStartsFrom(app->getLedgerManager()
                                           .getLastClosedLedgerHeader()
                                           .header.ledgerVersion,
@@ -2530,7 +2530,7 @@ TEST_CASE("soroban transaction validation", "[tx][envelope][soroban]")
                                  bool valid) {
         auto tx = sorobanTransactionFrameFromOps(
             app->getNetworkID(), root, {op0}, {}, resources, 100, 3'500'000);
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         REQUIRE(tx->checkValid(*app, ltx, 0, 0, 0) == valid);
         if (!valid)
         {
@@ -2541,7 +2541,7 @@ TEST_CASE("soroban transaction validation", "[tx][envelope][soroban]")
     SECTION("no soroban extension")
     {
         auto tx = transactionFrameFromOps(app->getNetworkID(), root, {op0}, {});
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         REQUIRE(!tx->checkValid(*app, ltx, 0, 0, 0));
         REQUIRE(tx->getResult().result.code() == txMALFORMED);
     }
@@ -2609,7 +2609,7 @@ TEST_CASE("soroban transaction validation", "[tx][envelope][soroban]")
         {
             auto tx = sorobanTransactionFrameFromOps(
                 app->getNetworkID(), root, {op}, {}, resources, 100, 4'000'000);
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             REQUIRE(tx->checkValid(*app, ltx, 0, 0, 0));
         }
         SECTION("limit exceeded")
@@ -2618,7 +2618,7 @@ TEST_CASE("soroban transaction validation", "[tx][envelope][soroban]")
                 InitialSorobanNetworkConfig::TX_MAX_SIZE_BYTES);
             auto tx = sorobanTransactionFrameFromOps(
                 app->getNetworkID(), root, {op}, {}, resources, 100, 4'000'000);
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             REQUIRE(!tx->checkValid(*app, ltx, 0, 0, 0));
             REQUIRE(tx->getResult().result.code() == txSOROBAN_INVALID);
         }
@@ -2630,7 +2630,7 @@ TEST_CASE("soroban transaction validation", "[tx][envelope][soroban]")
             auto tx = sorobanTransactionFrameFromOpsWithTotalFee(
                 app->getNetworkID(), root, {op0}, {}, resources, 1'000,
                 100'000);
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             REQUIRE(!tx->checkValid(*app, ltx, 0, 0, 0));
             REQUIRE(tx->getResult().result.code() == txSOROBAN_INVALID);
         }
@@ -2639,7 +2639,7 @@ TEST_CASE("soroban transaction validation", "[tx][envelope][soroban]")
             auto tx = sorobanTransactionFrameFromOpsWithTotalFee(
                 app->getNetworkID(), root, {op0}, {}, resources, 1'000'099,
                 1'000'000);
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             REQUIRE(!tx->checkValid(*app, ltx, 0, 0, 0));
             REQUIRE(tx->getResult().result.code() == txINSUFFICIENT_FEE);
         }
@@ -2647,7 +2647,7 @@ TEST_CASE("soroban transaction validation", "[tx][envelope][soroban]")
         {
             auto tx = sorobanTransactionFrameFromOpsWithTotalFee(
                 app->getNetworkID(), root, {op0}, {}, resources, 1'000'000, 10);
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             REQUIRE(!tx->checkValid(*app, ltx, 0, 0, 0));
             REQUIRE(tx->getResult().result.code() == txSOROBAN_INVALID);
         }
@@ -2656,7 +2656,7 @@ TEST_CASE("soroban transaction validation", "[tx][envelope][soroban]")
             auto tx = sorobanTransactionFrameFromOpsWithTotalFee(
                 app->getNetworkID(), root, {op0}, {}, resources, 1'000'000,
                 std::numeric_limits<int64_t>::min());
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             REQUIRE(!tx->checkValid(*app, ltx, 0, 0, 0));
             // Negative resource fee is handled before we get to
             // Soroban-specific checks.
@@ -2668,7 +2668,7 @@ TEST_CASE("soroban transaction validation", "[tx][envelope][soroban]")
                 app->getNetworkID(), root, {op0}, {}, resources,
                 std::numeric_limits<uint32_t>::max(),
                 static_cast<int64_t>(std::numeric_limits<uint32_t>::max()) + 1);
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             REQUIRE(!tx->checkValid(*app, ltx, 0, 0, 0));
             REQUIRE(tx->getResult().result.code() == txSOROBAN_INVALID);
         }
@@ -2678,7 +2678,7 @@ TEST_CASE("soroban transaction validation", "[tx][envelope][soroban]")
                 app->getNetworkID(), root, {op0}, {}, resources,
                 std::numeric_limits<uint32_t>::max(),
                 std::numeric_limits<int64_t>::max());
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             REQUIRE(!tx->checkValid(*app, ltx, 0, 0, 0));
             REQUIRE(tx->getResult().result.code() == txMALFORMED);
         }
@@ -2689,7 +2689,7 @@ TEST_CASE("soroban transaction validation", "[tx][envelope][soroban]")
                 std::numeric_limits<uint32_t>::max(),
                 static_cast<int64_t>(std::numeric_limits<uint32_t>::max()) -
                     100);
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             REQUIRE(tx->checkValid(*app, ltx, 0, 0, 0));
         }
         SECTION("total fee exceeds uint32 after adding base fee")
@@ -2699,7 +2699,7 @@ TEST_CASE("soroban transaction validation", "[tx][envelope][soroban]")
                 std::numeric_limits<uint32_t>::max(),
                 static_cast<int64_t>(std::numeric_limits<uint32_t>::max()) -
                     100 + 1);
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             REQUIRE(!tx->checkValid(*app, ltx, 0, 0, 0));
             // This gets rejected due to insufficient inclusion fee, so
             // we have the respective error code (even though the fee is
@@ -2714,7 +2714,7 @@ TEST_CASE("soroban transaction validation", "[tx][envelope][soroban]")
                 std::numeric_limits<uint32_t>::max(), resourceFee);
             auto tx = feeBump(*app, root, innerTx, resourceFee + 200,
                               /* useInclusionAsFullFee */ true);
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             // This could work in theory (because the fee bump has enough
             // fee to cover the inner tx), it can't work because we still
             // consider the inner tx invalid due to negative inclusion fee.
@@ -2729,7 +2729,7 @@ TEST_CASE("soroban transaction validation", "[tx][envelope][soroban]")
             auto tx = feeBump(*app, root, innerTx,
                               std::numeric_limits<int64_t>::max(),
                               /* useInclusionAsFullFee */ true);
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             REQUIRE(!tx->checkValid(*app, ltx, 0, 0, 0));
             REQUIRE(tx->getResult().result.code() == txMALFORMED);
         }
@@ -2742,7 +2742,7 @@ TEST_CASE("soroban transaction validation", "[tx][envelope][soroban]")
             auto tx = feeBump(*app, root, innerTx,
                               std::numeric_limits<int64_t>::max(),
                               /* useInclusionAsFullFee */ true);
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             REQUIRE(!tx->checkValid(*app, ltx, 0, 0, 0));
             REQUIRE(tx->getResult().result.code() == txMALFORMED);
         }
@@ -2752,7 +2752,7 @@ TEST_CASE("soroban transaction validation", "[tx][envelope][soroban]")
     {
         auto tx = sorobanTransactionFrameFromOps(
             app->getNetworkID(), root, {op0, op0}, {}, resources, 100, 100'000);
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         REQUIRE(!tx->checkValid(*app, ltx, 0, 0, 0));
         REQUIRE(tx->getResult().result.code() == txMALFORMED);
     }
@@ -2767,7 +2767,7 @@ TEST_CASE("soroban transaction validation", "[tx][envelope][soroban]")
         {
             auto tx = sorobanTransactionFrameFromOps(
                 app->getNetworkID(), root, {op}, {}, resources, 100, 3'500'000);
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             REQUIRE(tx->checkValid(*app, ltx, 0, 0, 0));
         }
         SECTION("over limit")
@@ -2776,7 +2776,7 @@ TEST_CASE("soroban transaction validation", "[tx][envelope][soroban]")
                               1);
             auto tx = sorobanTransactionFrameFromOps(
                 app->getNetworkID(), root, {op}, {}, resources, 100, 3'500'000);
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             REQUIRE(!tx->checkValid(*app, ltx, 0, 0, 0));
         }
     }
@@ -2800,7 +2800,7 @@ TEST_CASE("soroban transaction validation", "[tx][envelope][soroban]")
                 ContractDataDurability::PERSISTENT);
             auto tx = sorobanTransactionFrameFromOps(
                 app->getNetworkID(), root, {op}, {}, resources, 100, 3'500'000);
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             REQUIRE(tx->checkValid(*app, ltx, 0, 0, 0));
         }
         SECTION("read-only key over size limit")
@@ -2814,7 +2814,7 @@ TEST_CASE("soroban transaction validation", "[tx][envelope][soroban]")
             });
             auto tx = sorobanTransactionFrameFromOps(
                 app->getNetworkID(), root, {op}, {}, resources, 100, 3'500'000);
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             REQUIRE(!tx->checkValid(*app, ltx, 0, 0, 0));
         }
         SECTION("read-write key over size limit")
@@ -2828,7 +2828,7 @@ TEST_CASE("soroban transaction validation", "[tx][envelope][soroban]")
             });
             auto tx = sorobanTransactionFrameFromOps(
                 app->getNetworkID(), root, {op}, {}, resources, 100, 3'500'000);
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             REQUIRE(!tx->checkValid(*app, ltx, 0, 0, 0));
         }
     }

@@ -55,7 +55,7 @@ TEST_CASE("Flooding", "[flood][overlay][acceptance]")
         {
             LedgerEntry gen;
             {
-                LedgerTxn ltx(app0->getLedgerTxnRoot());
+                LedgerTxn ltx(app0->getTestLedgerTxn());
                 gen = stellar::loadAccount(ltx, root.getPublicKey()).current();
             }
 
@@ -68,7 +68,7 @@ TEST_CASE("Flooding", "[flood][overlay][acceptance]")
                 // need to create on all nodes
                 for (auto n : nodes)
                 {
-                    LedgerTxn ltx(n->getLedgerTxnRoot(), false);
+                    LedgerTxn ltx(n->getTestLedgerTxn(), false);
                     ltx.create(gen);
                     ltx.commit();
                 }

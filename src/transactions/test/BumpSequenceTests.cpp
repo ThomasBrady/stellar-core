@@ -88,7 +88,7 @@ TEST_CASE_VERSIONS("bump sequence", "[tx][bumpsequence]")
         for_versions_from(10, *app, [&]() {
             int64_t newSeq = 0;
             {
-                LedgerTxn ltx(app->getLedgerTxnRoot());
+                LedgerTxn ltx(app->getTestLedgerTxn());
                 auto ledgerSeq = ltx.loadHeader().current().ledgerSeq + 2;
                 newSeq = getStartingSequenceNumber(ledgerSeq) - 1;
             }

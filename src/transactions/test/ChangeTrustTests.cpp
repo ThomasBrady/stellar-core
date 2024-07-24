@@ -87,7 +87,7 @@ TEST_CASE_VERSIONS("change trust", "[tx][changetrust]")
                 REQUIRE_THROWS_AS(root.changeTrust(idr, 99),
                                   ex_CHANGE_TRUST_NO_ISSUER);
                 {
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     REQUIRE(!stellar::loadAccount(ltx, gateway));
                 }
             });
@@ -96,7 +96,7 @@ TEST_CASE_VERSIONS("change trust", "[tx][changetrust]")
     SECTION("trusting self")
     {
         auto validateTrustLineIsConst = [&]() {
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             auto trustLine =
                 stellar::loadTrustLine(ltx, gateway.getPublicKey(), idr);
             REQUIRE(trustLine);
@@ -104,7 +104,7 @@ TEST_CASE_VERSIONS("change trust", "[tx][changetrust]")
         };
 
         auto loadAccount = [&](PublicKey const& k) {
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             auto le = stellar::loadAccount(ltx, k).current();
             return le.data.account();
         };
@@ -292,7 +292,7 @@ TEST_CASE_VERSIONS("change trust", "[tx][changetrust]")
                 {root.op(changeTrust(idr, 100)), root.op(changeTrust(idr, 0))},
                 {});
 
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             TransactionMetaFrame txm(ltx.loadHeader().current().ledgerVersion);
             REQUIRE(tx->checkValid(*app, ltx, 0, 0, 0));
             REQUIRE(tx->apply(*app, ltx, txm));
@@ -303,7 +303,8 @@ TEST_CASE_VERSIONS("change trust", "[tx][changetrust]")
 TEST_CASE_VERSIONS("change trust pool share trustline",
                    "[tx][changetrust][liquiditypool]")
 {
-    Config const& cfg = getTestConfig();
+    auto cfg = getTestConfig();
+    cfg.DEPRECATED_SQL_LEDGER_STATE = true;
 
     VirtualClock clock;
     auto app = createTestApplication(clock, cfg);
@@ -335,7 +336,7 @@ TEST_CASE_VERSIONS("change trust pool share trustline",
     SECTION("pool trustline")
     {
         auto getNumSubEntries = [&](AccountID const& accountID) {
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             auto acc = stellar::loadAccount(ltx, accountID);
             return acc.current().data.account().numSubEntries;
         };
@@ -431,7 +432,7 @@ TEST_CASE_VERSIONS("change trust pool share trustline",
             }
 
             {
-                LedgerTxn ltx(app->getLedgerTxnRoot());
+                LedgerTxn ltx(app->getTestLedgerTxn());
                 auto pool =
                     loadLiquidityPool(ltx, poolShareTlAsset.liquidityPoolID());
                 REQUIRE(pool);
@@ -469,7 +470,7 @@ TEST_CASE_VERSIONS("change trust pool share trustline",
                 REQUIRE(getTrustLineEntryExtensionV2(assetATl)
                             .liquidityPoolUseCount == 2);
                 {
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     auto pool = loadLiquidityPool(
                         ltx, changeTrustAssetToTrustLineAsset(poolAZ)
                                  .liquidityPoolID());
@@ -528,7 +529,7 @@ TEST_CASE_VERSIONS("change trust pool share trustline",
             }
 
             {
-                LedgerTxn ltx(app->getLedgerTxnRoot());
+                LedgerTxn ltx(app->getTestLedgerTxn());
                 auto pool =
                     loadLiquidityPool(ltx, poolShareTlAsset.liquidityPoolID());
                 REQUIRE(startWithPool == (bool)pool);
@@ -698,7 +699,7 @@ TEST_CASE_VERSIONS("change trust pool share trustline",
                          acc1.op(endSponsoringFutureReserves())},
                         {acc1});
 
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     TransactionMetaFrame txm(
                         ltx.loadHeader().current().ledgerVersion);
                     REQUIRE(tx->checkValid(*app, ltx, 0, 0, 0));
@@ -710,7 +711,7 @@ TEST_CASE_VERSIONS("change trust pool share trustline",
                 auto tlAsset = changeTrustAssetToTrustLineAsset(idrUsd);
                 REQUIRE(acc1.hasTrustLine(tlAsset));
                 {
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     checkSponsorship(ltx, trustlineKey(acc1, tlAsset), 1,
                                      &gateway.getPublicKey());
                     checkSponsorship(ltx, acc1, 0, nullptr, 4, 2, 0, 2);
@@ -728,7 +729,7 @@ TEST_CASE_VERSIONS("change trust pool share trustline",
                             revokeSponsorship(trustlineKey(acc1, tlAsset)))},
                         {});
 
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     TransactionMetaFrame txm(
                         ltx.loadHeader().current().ledgerVersion);
                     REQUIRE(tx->checkValid(*app, ltx, 0, 0, 0));
@@ -753,7 +754,7 @@ TEST_CASE_VERSIONS("change trust pool share trustline",
                          gateway.op(endSponsoringFutureReserves())},
                         {acc2});
 
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     TransactionMetaFrame txm(
                         ltx.loadHeader().current().ledgerVersion);
                     REQUIRE(tx->checkValid(*app, ltx, 0, 0, 0));
@@ -777,7 +778,7 @@ TEST_CASE_VERSIONS("change trust pool share trustline",
                             revokeSponsorship(trustlineKey(acc1, tlAsset)))},
                         {});
 
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     TransactionMetaFrame txm(
                         ltx.loadHeader().current().ledgerVersion);
                     REQUIRE(tx->checkValid(*app, ltx, 0, 0, 0));
@@ -799,7 +800,7 @@ TEST_CASE_VERSIONS("change trust pool share trustline",
                          gateway.op(endSponsoringFutureReserves())},
                         {acc2});
 
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     TransactionMetaFrame txm(
                         ltx.loadHeader().current().ledgerVersion);
                     REQUIRE(tx->checkValid(*app, ltx, 0, 0, 0));
@@ -827,7 +828,7 @@ TEST_CASE_VERSIONS("change trust pool share trustline",
                         app->getNetworkID(), root,
                         {acc1.op(changeTrust(idrUsd, 0))}, {acc1});
 
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     TransactionMetaFrame txm(
                         ltx.loadHeader().current().ledgerVersion);
                     REQUIRE(tx->checkValid(*app, ltx, 0, 0, 0));
@@ -876,7 +877,7 @@ TEST_CASE_VERSIONS("change trust pool share trustline",
                              acc1.op(endSponsoringFutureReserves())},
                             {acc1});
 
-                        LedgerTxn ltx(app->getLedgerTxnRoot());
+                        LedgerTxn ltx(app->getTestLedgerTxn());
                         TransactionMetaFrame txm(
                             ltx.loadHeader().current().ledgerVersion);
                         REQUIRE(tx->checkValid(*app, ltx, 0, 0, 0));

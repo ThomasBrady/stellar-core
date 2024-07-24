@@ -114,6 +114,9 @@ class ApplicationImpl : public Application
     virtual void generateLoad(GeneratedLoadConfig cfg) override;
 
     virtual LoadGenerator& getLoadGenerator() override;
+
+    virtual AbstractLedgerTxnParent& getTestLedgerTxn() override;
+    virtual void resetTestLedgerTxn() override;
 #endif
 
     virtual void applyCfgCommands() override;
@@ -196,6 +199,7 @@ class ApplicationImpl : public Application
 
 #ifdef BUILD_TESTS
     std::unique_ptr<LoadGenerator> mLoadGenerator;
+    std::unique_ptr<AbstractLedgerTxn> mTestLedgerTxn;
 #endif
 
     std::vector<std::thread> mWorkerThreads;

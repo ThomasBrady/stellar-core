@@ -181,7 +181,7 @@ TEST_CASE_VERSIONS("pathpayment strict send", "[tx][pathpayment]")
 
     auto exchanged = [&](TestMarketOffer const& o, int64_t sold,
                          int64_t bought) {
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         return o.exchanged(ltx.loadHeader().current().ledgerVersion, sold,
                            bought);
     };
@@ -2103,7 +2103,7 @@ TEST_CASE_VERSIONS("pathpayment strict send", "[tx][pathpayment]")
             };
             auto validateOffer = [&](const TestAccount& account,
                                      int64_t offerId, int64_t difference) {
-                LedgerTxn ltx(app->getLedgerTxnRoot());
+                LedgerTxn ltx(app->getTestLedgerTxn());
                 auto offer =
                     stellar::loadOffer(ltx, account.getPublicKey(), offerId);
                 auto const& oe = offer.current().data.offer();
@@ -2411,7 +2411,7 @@ TEST_CASE_VERSIONS("pathpayment strict send uses all offers in a loop",
 
     auto exchanged = [&](TestMarketOffer const& o, int64_t sold,
                          int64_t bought) {
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         return o.exchanged(ltx.loadHeader().current().ledgerVersion, sold,
                            bought);
     };

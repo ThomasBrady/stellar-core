@@ -31,6 +31,9 @@
 #include "util/XDROperators.h"
 #include "util/types.h"
 #include "xdrpp/autocheck.h"
+#include "bucket/BucketManager.h"
+#include "util/XDRCereal.h"
+#include "xdrpp/printer.h"
 
 #include <lib/catch.hpp>
 
@@ -123,7 +126,7 @@ applyCheck(TransactionFramePtr tx, Application& app, bool checkSeqNum)
     // Close the ledger here to advance ledgerSeq
     closeLedger(app);
 
-    LedgerTxn ltx(app.getLedgerTxnRoot());
+    LedgerTxn ltx(app.getTestLedgerTxn());
 
     auto ledgerVersion = ltx.loadHeader().current().ledgerVersion;
 
@@ -397,7 +400,7 @@ applyTx(TransactionFramePtr const& tx, Application& app, bool checkSeqNum)
         checkTransaction(*tx, app);
     }
 
-    LedgerTxn ltx(app.getLedgerTxnRoot());
+    LedgerTxn ltx(app.getTestLedgerTxn());
     auto account = stellar::loadAccount(ltx, tx->getSourceID());
     if (protocolVersionStartsFrom(ltx.loadHeader().current().ledgerVersion,
                                   ProtocolVersion::V_19) &&
@@ -420,7 +423,7 @@ validateTxResults(TransactionFramePtr const& tx, Application& app,
     auto checkedTx = TransactionFrameBase::makeTransactionFromWire(
         app.getNetworkID(), tx->getEnvelope());
     {
-        LedgerTxn ltx(app.getLedgerTxnRoot());
+        LedgerTxn ltx(app.getTestLedgerTxn());
         REQUIRE(checkedTx->checkValid(app, ltx, 0, 0, 0) == shouldValidateOk);
     }
     REQUIRE(checkedTx->getResult().result.code() == validationResult.code);
@@ -453,7 +456,7 @@ checkLiquidityPool(Application& app, PoolID const& poolID, int64_t reserveA,
                    int64_t reserveB, int64_t totalPoolShares,
                    int64_t poolSharesTrustLineCount)
 {
-    LedgerTxn ltx(app.getLedgerTxnRoot());
+    LedgerTxn ltx(app.getTestLedgerTxn());
     auto lp = loadLiquidityPool(ltx, poolID);
     REQUIRE(lp);
     auto const& cp = lp.current().data.liquidityPool().body.constantProduct();
@@ -629,14 +632,14 @@ loadAccount(AbstractLedgerTxn& ltx, PublicKey const& k, bool mustExist)
 bool
 doesAccountExist(Application& app, PublicKey const& k)
 {
-    LedgerTxn ltx(app.getLedgerTxnRoot());
+    LedgerTxn ltx(app.getTestLedgerTxn());
     return (bool)stellar::loadAccountWithoutRecord(ltx, k);
 }
 
 xdr::xvector<Signer, 20>
 getAccountSigners(PublicKey const& k, Application& app)
 {
-    LedgerTxn ltx(app.getLedgerTxnRoot());
+    LedgerTxn ltx(app.getTestLedgerTxn());
     auto account = stellar::loadAccount(ltx, k);
     return account.current().data.account().signers;
 }
@@ -699,7 +702,7 @@ transactionFromOperations(Application& app, SecretKey const& from,
 {
     uint32_t ledgerVersion;
     {
-        LedgerTxn ltx(app.getLedgerTxnRoot());
+        LedgerTxn ltx(app.getTestLedgerTxn());
         ledgerVersion = ltx.loadHeader().current().ledgerVersion;
     }
     if (protocolVersionIsBefore(ledgerVersion, ProtocolVersion::V_13))
@@ -923,7 +926,7 @@ sorobanResourceFee(Application& app, SorobanResources const& resources,
                    size_t txSize, uint32_t eventsSize)
 {
     releaseAssert(txSize <= INT32_MAX);
-    LedgerTxn ltx(app.getLedgerTxnRoot(),
+    LedgerTxn ltx(app.getTestLedgerTxn(),
                   /* shouldUpdateLastModified */ true,
                   TransactionMode::READ_ONLY_WITHOUT_SQL_TXN);
     auto feePair = TransactionFrame::computeSorobanResourceFee(
@@ -1068,7 +1071,7 @@ applyCreateOfferHelper(Application& app, int64 offerId, SecretKey const& source,
                        Price const& price, int64_t amount, SequenceNumber seq)
 {
     auto getIdPool = [&]() {
-        LedgerTxn ltx(app.getLedgerTxnRoot());
+        LedgerTxn ltx(app.getTestLedgerTxn());
         return ltx.loadHeader().current().idPool;
     };
     auto lastGeneratedID = getIdPool();
@@ -1104,11 +1107,14 @@ applyCreateOfferHelper(Application& app, int64 offerId, SecretKey const& source,
     case MANAGE_OFFER_CREATED:
     case MANAGE_OFFER_UPDATED:
     {
-        LedgerTxn ltx(app.getLedgerTxnRoot());
+        REQUIRE(manageSellOfferResult.code() == ManageSellOfferResultCode::MANAGE_SELL_OFFER_SUCCESS);
+        LedgerTxn ltx(app.getTestLedgerTxn());
         auto offer =
             stellar::loadOffer(ltx, source.getPublicKey(), expectedOfferID);
         REQUIRE(offer);
         auto& offerEntry = offer.current().data.offer();
+        auto offerEStr =  xdr::xdr_to_string(offerEntry);
+        auto offerRStr =  xdr::xdr_to_string(offerResult.offer());
         REQUIRE(offerEntry == offerResult.offer());
         REQUIRE(offerEntry.price == price);
         REQUIRE(offerEntry.selling == selling);
@@ -1117,7 +1123,7 @@ applyCreateOfferHelper(Application& app, int64 offerId, SecretKey const& source,
     break;
     case MANAGE_OFFER_DELETED:
     {
-        LedgerTxn ltx(app.getLedgerTxnRoot());
+        LedgerTxn ltx(app.getTestLedgerTxn());
         REQUIRE(
             !stellar::loadOffer(ltx, source.getPublicKey(), expectedOfferID));
     }
@@ -1151,7 +1157,7 @@ applyManageBuyOffer(Application& app, int64 offerId, SecretKey const& source,
                     ManageOfferEffect expectedEffect)
 {
     auto getIdPool = [&]() {
-        LedgerTxn ltx(app.getLedgerTxnRoot());
+        LedgerTxn ltx(app.getTestLedgerTxn());
         return ltx.loadHeader().current().idPool;
     };
     auto lastGeneratedID = getIdPool();
@@ -1185,7 +1191,7 @@ applyManageBuyOffer(Application& app, int64 offerId, SecretKey const& source,
     case MANAGE_OFFER_CREATED:
     case MANAGE_OFFER_UPDATED:
     {
-        LedgerTxn ltx(app.getLedgerTxnRoot());
+        LedgerTxn ltx(app.getTestLedgerTxn());
         auto offer =
             stellar::loadOffer(ltx, source.getPublicKey(), expectedOfferID);
         REQUIRE(offer);
@@ -1198,7 +1204,7 @@ applyManageBuyOffer(Application& app, int64 offerId, SecretKey const& source,
     break;
     case MANAGE_OFFER_DELETED:
     {
-        LedgerTxn ltx(app.getLedgerTxnRoot());
+        LedgerTxn ltx(app.getTestLedgerTxn());
         REQUIRE(
             !stellar::loadOffer(ltx, source.getPublicKey(), expectedOfferID));
     }
@@ -1218,7 +1224,7 @@ applyCreatePassiveOffer(Application& app, SecretKey const& source,
                         ManageOfferEffect expectedEffect)
 {
     auto getIdPool = [&]() {
-        LedgerTxn ltx(app.getLedgerTxnRoot());
+        LedgerTxn ltx(app.getTestLedgerTxn());
         return ltx.loadHeader().current().idPool;
     };
     auto lastGeneratedID = getIdPool();
@@ -1253,7 +1259,7 @@ applyCreatePassiveOffer(Application& app, SecretKey const& source,
         case MANAGE_OFFER_CREATED:
         case MANAGE_OFFER_UPDATED:
         {
-            LedgerTxn ltx(app.getLedgerTxnRoot());
+            LedgerTxn ltx(app.getTestLedgerTxn());
             auto offer =
                 stellar::loadOffer(ltx, source.getPublicKey(), expectedOfferID);
             REQUIRE(offer);
@@ -1267,7 +1273,7 @@ applyCreatePassiveOffer(Application& app, SecretKey const& source,
         break;
         case MANAGE_OFFER_DELETED:
         {
-            LedgerTxn ltx(app.getLedgerTxnRoot());
+            LedgerTxn ltx(app.getTestLedgerTxn());
             REQUIRE(!stellar::loadOffer(ltx, source.getPublicKey(),
                                         expectedOfferID));
         }
@@ -1798,7 +1804,7 @@ executeUpgrade(Application& app, LedgerUpgrade const& lupgrade,
 };
 
 ConfigUpgradeSetFrameConstPtr
-makeConfigUpgradeSet(AbstractLedgerTxn& ltx, ConfigUpgradeSet configUpgradeSet,
+makeConfigUpgradeSet(Application& app, AbstractLedgerTxn& ltx, ConfigUpgradeSet configUpgradeSet,
                      bool expireSet, ContractDataDurability type)
 {
     // Make entry for the upgrade
@@ -1831,9 +1837,12 @@ makeConfigUpgradeSet(AbstractLedgerTxn& ltx, ConfigUpgradeSet configUpgradeSet,
 
     ltx.create(InternalLedgerEntry(le));
     ltx.create(InternalLedgerEntry(ttl));
+    std::vector<LedgerEntry> entries = {le, ttl};
 
     auto upgradeKey = ConfigUpgradeSetKey{contractID, hashOfUpgradeSet};
-    return ConfigUpgradeSetFrame::makeFromKey(ltx, upgradeKey);
+    auto result = ConfigUpgradeSetFrame::makeFromKey(ltx, upgradeKey);
+    app.getBucketManager().addBatch(app, app.getLedgerManager().getLastClosedLedgerNum() + 1, ltx.loadHeader().current().ledgerVersion, entries, {}, {});
+    return result;
 }
 
 LedgerUpgrade
@@ -1919,14 +1928,14 @@ depositTradeWithdrawTest(Application& app, TestAccount& root, int depositSize,
         }
     }
 
-    LedgerTxn ltx(app.getLedgerTxnRoot());
+    LedgerTxn ltx(app.getTestLedgerTxn());
     REQUIRE(!loadLiquidityPool(ltx, pool12));
 }
 
 int64_t
 getBalance(Application& app, AccountID const& accountID, Asset const& asset)
 {
-    LedgerTxn ltx(app.getLedgerTxnRoot());
+    LedgerTxn ltx(app.getTestLedgerTxn());
     if (asset.type() == ASSET_TYPE_NATIVE)
     {
         auto entry = stellar::loadAccount(ltx, accountID);

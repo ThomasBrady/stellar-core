@@ -202,7 +202,7 @@ modifySorobanNetworkConfig(Application& app,
     {
         return;
     }
-    LedgerTxn ltx(app.getLedgerTxnRoot());
+    LedgerTxn ltx(app.getTestLedgerTxn());
     app.getLedgerManager().updateNetworkConfig(ltx);
     auto& cfg = app.getLedgerManager().getMutableSorobanNetworkConfig();
     modifyFn(cfg);
@@ -252,7 +252,7 @@ overrideSorobanNetworkConfigForTest(Application& app)
 bool
 appProtocolVersionStartsFrom(Application& app, ProtocolVersion fromVersion)
 {
-    LedgerTxn ltx(app.getLedgerTxnRoot());
+    LedgerTxn ltx(app.getTestLedgerTxn());
     auto ledgerVersion = ltx.loadHeader().current().ledgerVersion;
 
     return protocolVersionStartsFrom(ledgerVersion, fromVersion);

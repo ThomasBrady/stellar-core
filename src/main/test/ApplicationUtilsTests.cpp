@@ -78,7 +78,7 @@ class TemporarySQLiteDBDamager : public TemporaryFileDamager
         // Damage a database by bumping the root account's last-modified.
         VirtualClock clock;
         auto app = createTestApplication(clock, mConfig, /*newDB=*/false);
-        LedgerTxn ltx(app->getLedgerTxnRoot(),
+        LedgerTxn ltx(app->getTestLedgerTxn(),
                       /*shouldUpdateLastModified=*/false);
         {
             auto rootKey = accountKey(

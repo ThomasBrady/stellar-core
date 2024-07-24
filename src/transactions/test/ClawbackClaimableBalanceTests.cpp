@@ -110,7 +110,7 @@ TEST_CASE_VERSIONS("clawbackClaimableBalance",
 
                 ClaimableBalanceID balanceID;
                 {
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     TransactionMetaFrame txm(
                         ltx.loadHeader().current().ledgerVersion);
                     REQUIRE(tx->checkValid(*app, ltx, 0, 0, 0));
@@ -132,7 +132,7 @@ TEST_CASE_VERSIONS("clawbackClaimableBalance",
                 gateway.clawbackClaimableBalance(balanceID);
 
                 {
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     checkSponsorship(ltx, account, 0, nullptr, 0, 2, 0, 0);
                 }
 

@@ -946,7 +946,11 @@ ApplicableTxSetFrame::checkValid(Application& app,
         }
 
         {
+#ifdef BUILD_TESTS
+//            LedgerTxn ltx(app.getTestLedgerTxn());
+#else
             LedgerTxn ltx(app.getLedgerTxnRoot());
+#endif
             auto limits = app.getLedgerManager().maxLedgerResources(
                 /* isSoroban */ true);
             if (anyGreater(*totalTxSetRes, limits))

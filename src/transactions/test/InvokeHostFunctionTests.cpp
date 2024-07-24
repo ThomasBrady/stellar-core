@@ -47,7 +47,7 @@ namespace
 void
 overrideNetworkSettingsToMin(Application& app)
 {
-    LedgerTxn ltx(app.getLedgerTxnRoot());
+    LedgerTxn ltx(app.getTestLedgerTxn());
 
     ltx.load(configSettingKey(
                  ConfigSettingID::CONFIG_SETTING_CONTRACT_MAX_SIZE_BYTES))
@@ -181,7 +181,7 @@ TEST_CASE("Trustline stellar asset contract",
     }
 
     {
-        LedgerTxn ltx(app.getLedgerTxnRoot());
+        LedgerTxn ltx(app.getTestLedgerTxn());
         auto tlAsset = assetToTrustLineAsset(idr);
         checkSponsorship(ltx, trustlineKey(acc, tlAsset), 1,
                          &sponsor.getPublicKey());
@@ -277,7 +277,7 @@ TEST_CASE("Trustline stellar asset contract",
 
     // Make sure sponsorship info hasn't changed
     {
-        LedgerTxn ltx(app.getLedgerTxnRoot());
+        LedgerTxn ltx(app.getTestLedgerTxn());
         auto tlAsset = assetToTrustLineAsset(idr);
         checkSponsorship(ltx, trustlineKey(acc, tlAsset), 1,
                          &sponsor.getPublicKey());
@@ -311,7 +311,7 @@ TEST_CASE("Native stellar asset contract",
     REQUIRE(test.invokeTx(tx));
 
     {
-        LedgerTxn ltx(app.getLedgerTxnRoot());
+        LedgerTxn ltx(app.getTestLedgerTxn());
         checkSponsorship(ltx, a1.getPublicKey(), 1, &root.getPublicKey(), 0, 2,
                          0, 2);
         checkSponsorship(ltx, root.getPublicKey(), 0, nullptr, 0, 2, 2, 0);
@@ -378,7 +378,7 @@ TEST_CASE("Native stellar asset contract",
 
     // Make sure sponsorship info hasn't changed
     {
-        LedgerTxn ltx(app.getLedgerTxnRoot());
+        LedgerTxn ltx(app.getTestLedgerTxn());
         checkSponsorship(ltx, a1.getPublicKey(), 1, &root.getPublicKey(), 0, 2,
                          0, 2);
         checkSponsorship(ltx, root.getPublicKey(), 0, nullptr, 0, 2, 2, 0);
@@ -387,7 +387,9 @@ TEST_CASE("Native stellar asset contract",
 
 TEST_CASE("basic contract invocation", "[tx][soroban]")
 {
-    SorobanTest test;
+    Config cfg = getTestConfig();
+    cfg.DEPRECATED_SQL_LEDGER_STATE = true;
+    SorobanTest test(cfg);
     TestContract& addContract =
         test.deployWasmContract(rust_bridge::get_test_wasm_add_i32());
     auto& hostFnExecTimer =
@@ -423,7 +425,7 @@ TEST_CASE("basic contract invocation", "[tx][soroban]")
         uint32_t const surgePricedFee = 300;
         REQUIRE(tx->getResult().feeCharged == baseCharged);
         {
-            LedgerTxn ltx(test.getApp().getLedgerTxnRoot());
+            LedgerTxn ltx(test.getApp().getTestLedgerTxn());
             tx->processFeeSeqNum(ltx, surgePricedFee);
             ltx.commit();
         }
@@ -439,7 +441,7 @@ TEST_CASE("basic contract invocation", "[tx][soroban]")
         REQUIRE(hostFnExecTimer.count() - timerBefore > 0);
 
         {
-            LedgerTxn ltx(test.getApp().getLedgerTxnRoot());
+            LedgerTxn ltx(test.getApp().getTestLedgerTxn());
             tx->processPostApply(test.getApp(), ltx, txm);
             ltx.commit();
         }
@@ -977,7 +979,9 @@ TEST_CASE("Soroban non-refundable resource fees are stable", "[tx][soroban]")
     int64_t const baseTxFee = baseHistoricalFee + baseSizeFee;
     uint32_t const minInclusionFee = 100;
 
-    SorobanTest test(getTestConfig(),
+    auto cfg = getTestConfig();
+    cfg.DEPRECATED_SQL_LEDGER_STATE = true;
+    SorobanTest test(cfg,
                      /*useTestLimits=*/true, cfgModifyFn);
     auto makeTx = [&test](SorobanResources const& resources,
                           uint32_t inclusionFee, int64_t resourceFee) {
@@ -1503,7 +1507,7 @@ TEST_CASE("settings upgrade", "[tx][soroban][upgrades]")
                 continue;
             }
 
-            LedgerTxn ltx(test.getApp().getLedgerTxnRoot());
+            LedgerTxn ltx(test.getApp().getTestLedgerTxn());
             auto costEntry =
                 ltx.load(configSettingKey(static_cast<ConfigSettingID>(i)));
             updatedEntries.emplace_back(
@@ -1607,7 +1611,7 @@ TEST_CASE("settings upgrade", "[tx][soroban][upgrades]")
         {
             auto costKey = configSettingKey(
                 ConfigSettingID::CONFIG_SETTING_CONTRACT_LEDGER_COST_V0);
-            LedgerTxn ltx(test.getApp().getLedgerTxnRoot());
+            LedgerTxn ltx(test.getApp().getTestLedgerTxn());
             auto costEntry = ltx.load(costKey);
             REQUIRE(costEntry.current()
                         .data.configSetting()
@@ -1666,7 +1670,7 @@ TEST_CASE("loadgen Wasm executes properly", "[tx][soroban][loadgen]")
 
     for (auto const& key : keys)
     {
-        LedgerTxn ltx(test.getApp().getLedgerTxnRoot());
+        LedgerTxn ltx(test.getApp().getTestLedgerTxn());
         auto ltxe = ltx.load(key);
         REQUIRE(ltxe);
         auto size = xdr::xdr_size(ltxe.current());
@@ -1681,6 +1685,7 @@ TEST_CASE("complex contract", "[tx][soroban]")
 {
     auto complexTest = [&](bool enableDiagnostics) {
         auto cfg = getTestConfig();
+        cfg.DEPRECATED_SQL_LEDGER_STATE = true;
         cfg.ENABLE_SOROBAN_DIAGNOSTIC_EVENTS = enableDiagnostics;
         SorobanTest test(cfg);
         auto& contract =
@@ -1989,7 +1994,7 @@ TEST_CASE("contract storage", "[tx][soroban]")
             auto acc = test.getRoot().create(
                 "acc", test.getApp().getLedgerManager().getLastMinBalance(1));
             auto loadAccount = [&]() {
-                LedgerTxn ltx(test.getApp().getLedgerTxnRoot());
+                LedgerTxn ltx(test.getApp().getTestLedgerTxn());
                 auto ltxe = stellar::loadAccountWithoutRecord(ltx, acc);
                 REQUIRE(ltxe);
                 return ltxe.current();
@@ -2580,7 +2585,7 @@ TEST_CASE("temp entry eviction", "[tx][soroban]")
             closeLedgerOn(test.getApp(), evictionLedger, 2, 1, 2016);
 
             {
-                LedgerTxn ltx(test.getApp().getLedgerTxnRoot());
+                LedgerTxn ltx(test.getApp().getTestLedgerTxn());
                 REQUIRE(!ltx.load(lk));
             }
 
@@ -2625,7 +2630,7 @@ TEST_CASE("temp entry eviction", "[tx][soroban]")
             REQUIRE(client.put("key", ContractDataDurability::TEMPORARY, 234) ==
                     INVOKE_HOST_FUNCTION_SUCCESS);
             {
-                LedgerTxn ltx(test.getApp().getLedgerTxnRoot());
+                LedgerTxn ltx(test.getApp().getTestLedgerTxn());
                 REQUIRE(ltx.load(lk));
             }
 
@@ -2668,7 +2673,9 @@ TEST_CASE("temp entry eviction", "[tx][soroban]")
 
 TEST_CASE("state archival operation errors", "[tx][soroban]")
 {
-    SorobanTest test;
+    Config cfg = getTestConfig();
+    cfg.DEPRECATED_SQL_LEDGER_STATE = true;
+    SorobanTest test(cfg);
     ContractStorageTestClient client(test);
     auto const& stateArchivalSettings =
         test.getNetworkCfg().stateArchivalSettings();
@@ -2843,7 +2850,7 @@ TEST_CASE("settings upgrade command line utils", "[tx][soroban][upgrades]")
     for (uint32_t i = 0;
          i < static_cast<uint32_t>(CONFIG_SETTING_BUCKETLIST_SIZE_WINDOW); ++i)
     {
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         auto entry =
             ltx.load(configSettingKey(static_cast<ConfigSettingID>(i)));
 
@@ -3085,7 +3092,7 @@ TEST_CASE("settings upgrade command line utils", "[tx][soroban][upgrades]")
                              .getSorobanNetworkConfig()
                              .getAverageBucketListSize();
     {
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         auto costKey = configSettingKey(
             ConfigSettingID::CONFIG_SETTING_CONTRACT_LEDGER_COST_V0);
 
@@ -3111,7 +3118,7 @@ TEST_CASE("settings upgrade command line utils", "[tx][soroban][upgrades]")
 
         auto const& tx = TransactionFrameBase::makeTransactionFromWire(
             app->getNetworkID(), txEnv);
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         TransactionMetaFrame txm(ltx.loadHeader().current().ledgerVersion);
         REQUIRE(tx->checkValid(*app, ltx, 0, 0, 0));
         REQUIRE(tx->apply(*app, ltx, txm));
@@ -3133,7 +3140,7 @@ TEST_CASE("settings upgrade command line utils", "[tx][soroban][upgrades]")
              i < static_cast<uint32_t>(CONFIG_SETTING_BUCKETLIST_SIZE_WINDOW);
              ++i)
         {
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             auto entry =
                 ltx.load(configSettingKey(static_cast<ConfigSettingID>(i)));
 
@@ -3178,7 +3185,7 @@ TEST_CASE("settings upgrade command line utils", "[tx][soroban][upgrades]")
         auto const& txRevertSettings =
             TransactionFrameBase::makeTransactionFromWire(app->getNetworkID(),
                                                           invokeRes2.first);
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         TransactionMetaFrame txm(ltx.loadHeader().current().ledgerVersion);
         REQUIRE(txRevertSettings->checkValid(*app, ltx, 0, 0, 0));
         REQUIRE(txRevertSettings->apply(*app, ltx, txm));
@@ -3209,7 +3216,7 @@ TEST_CASE("settings upgrade command line utils", "[tx][soroban][upgrades]")
     // The rest are failure tests, so flip back our cost overrides so we can
     // check that the initial settings haven't changed.
     {
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         auto costKey = configSettingKey(
             ConfigSettingID::CONFIG_SETTING_CONTRACT_LEDGER_COST_V0);
 
@@ -3239,7 +3246,7 @@ TEST_CASE("settings upgrade command line utils", "[tx][soroban][upgrades]")
     SECTION("entry expired")
     {
         {
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             auto ttl = ltx.load(getTTLKey(proposalKey));
             // Expire the entry on the next ledger
             ttl.current().data.ttl().liveUntilLedgerSeq = lcl.header.ledgerSeq;
@@ -3263,7 +3270,7 @@ TEST_CASE("settings upgrade command line utils", "[tx][soroban][upgrades]")
 
     auto updateBytes = [&](SCVal const& bytes) {
         {
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             auto entry = ltx.load(proposalKey);
             entry.current().data.contractData().val = bytes;
             ltx.commit();
@@ -4204,7 +4211,7 @@ TEST_CASE("Vm instantiation tightening", "[tx][soroban]")
     auto const& addContract = test.deployWasmContract(wasm);
     auto const& wasmHash = addContract.getKeys().front().contractCode().hash;
     {
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         auto ltxe = loadContractCode(ltx, wasmHash);
         auto const& code = ltxe.current().data.contractCode();
         REQUIRE(code.ext.v() == 0);
@@ -4252,7 +4259,7 @@ TEST_CASE("Vm instantiation tightening", "[tx][soroban]")
     checkTx(0, r, txSUCCESS);
 
     {
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         auto ltxe = loadContractCode(ltx, wasmHash);
         auto const& code = ltxe.current().data.contractCode();
         REQUIRE(code.ext.v() == 1);
@@ -4278,7 +4285,7 @@ TEST_CASE("Vm instantiation tightening", "[tx][soroban]")
     auto const& contract2 =
         test.deployWasmContract(rust_bridge::get_hostile_large_val_wasm());
     {
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         auto ltxe = loadContractCode(
             ltx, contract2.getKeys().front().contractCode().hash);
         auto const& code = ltxe.current().data.contractCode();

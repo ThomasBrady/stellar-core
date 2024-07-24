@@ -1456,6 +1456,9 @@ HerderImpl::setUpgrades(Upgrades::UpgradeParameters const& upgrades)
 std::string
 HerderImpl::getUpgradesJson()
 {
+#ifdef BUILD_TESTS
+    mApp.resetTestLedgerTxn();
+#endif
     LedgerTxn ltx(mApp.getLedgerTxnRoot());
     return mUpgrades.getParameters().toDebugJson(ltx);
 }

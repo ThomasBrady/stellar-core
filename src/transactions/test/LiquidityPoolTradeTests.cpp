@@ -1069,7 +1069,7 @@ TEST_CASE_VERSIONS("liquidity pool trade", "[tx][liquiditypool]")
                 REQUIRE(getBalance(a2, fromPoolAsset) ==
                         fromPoolBalanceBefore2 + fromPool);
 
-                LedgerTxn ltx(app->getLedgerTxnRoot());
+                LedgerTxn ltx(app->getTestLedgerTxn());
                 auto lp = loadLiquidityPool(ltx, pool);
                 auto const& cp =
                     lp.current().data.liquidityPool().body.constantProduct();

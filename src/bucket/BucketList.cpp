@@ -223,6 +223,9 @@ BucketListDepth::operator uint32_t() const
 uint32_t
 BucketList::levelSize(uint32_t level)
 {
+    if (level >= kNumLevels) {
+        CLOG_ERROR(Bucket,"levelSize: level {} is out of range", level);
+    }
     releaseAssert(level < kNumLevels);
     return 1UL << (2 * (level + 1));
 }

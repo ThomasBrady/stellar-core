@@ -55,7 +55,8 @@ enum class PaymentValidity
 
 TEST_CASE_VERSIONS("txresults", "[tx][txresults]")
 {
-    auto const& cfg = getTestConfig();
+    auto  cfg = getTestConfig();
+    cfg.DEPRECATED_SQL_LEDGER_STATE = true;
 
     VirtualClock clock;
     auto app = createTestApplication(clock, cfg);
@@ -68,7 +69,7 @@ TEST_CASE_VERSIONS("txresults", "[tx][txresults]")
     closeLedgerOn(*app, 1, 1, 2016);
 
     auto getCloseTime = [&] {
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         return lm.getLastClosedLedgerHeader().header.scpValue.closeTime;
     };
 

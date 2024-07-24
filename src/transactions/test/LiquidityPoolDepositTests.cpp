@@ -17,7 +17,9 @@ using namespace stellar::txtest;
 TEST_CASE_VERSIONS("liquidity pool deposit", "[tx][liquiditypool]")
 {
     VirtualClock clock;
-    auto app = createTestApplication(clock, getTestConfig());
+    auto cfg = getTestConfig();
+    cfg.DEPRECATED_SQL_LEDGER_STATE = true;
+    auto app = createTestApplication(clock, cfg);
 
     // set up world
     auto const& lm = app->getLedgerManager();

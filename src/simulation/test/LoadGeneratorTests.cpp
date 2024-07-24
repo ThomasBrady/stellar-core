@@ -253,7 +253,7 @@ TEST_CASE("generate soroban load", "[loadgen][soroban]")
 
     ConfigUpgradeSet upgrades;
     {
-        LedgerTxn ltx(app.getLedgerTxnRoot());
+        LedgerTxn ltx(app.getTestLedgerTxn());
         auto entry = ltx.load(upgradeLK);
         REQUIRE(entry);
         xdr::xdr_from_opaque(entry.current().data.contractData().val.bytes(),
@@ -467,7 +467,7 @@ TEST_CASE("generate soroban load", "[loadgen][soroban]")
             auto lk = contractDataKey(contractID, txtest::makeU32(i),
                                       ContractDataDurability::PERSISTENT);
 
-            LedgerTxn ltx(app.getLedgerTxnRoot());
+            LedgerTxn ltx(app.getTestLedgerTxn());
             auto entry = ltx.load(lk);
             REQUIRE(entry);
             uint32_t sizeBytes =

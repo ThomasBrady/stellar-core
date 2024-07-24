@@ -63,7 +63,7 @@ store(Application& app, UpdateList const& apply, AbstractLedgerTxn* ltxPtr,
     std::unique_ptr<LedgerTxn> ltxStore;
     if (ltxPtr == nullptr)
     {
-        ltxStore = std::make_unique<LedgerTxn>(app.getLedgerTxnRoot());
+        ltxStore = std::make_unique<LedgerTxn>(app.getTestLedgerTxn());
         ltxPtr = ltxStore.get();
     }
     for (auto const& toApply : apply)
@@ -205,7 +205,7 @@ normalizeSigners(AccountEntry& acc)
 int64_t
 getMinBalance(Application& app, AccountEntry const& acc)
 {
-    LedgerTxn ltx(app.getLedgerTxnRoot());
+    LedgerTxn ltx(app.getTestLedgerTxn());
     return getMinBalance(ltx.loadHeader().current(), acc);
 }
 }

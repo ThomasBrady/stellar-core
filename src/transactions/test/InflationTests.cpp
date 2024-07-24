@@ -53,7 +53,7 @@ createTestAccounts(Application& app, int nbAccounts,
             SecretKey to = getTestAccount(i);
             root.create(to, bal);
 
-            LedgerTxn ltx(app.getLedgerTxnRoot());
+            LedgerTxn ltx(app.getTestLedgerTxn());
             auto account = stellar::loadAccount(ltx, to.getPublicKey());
             auto& ae = account.current().data.account();
             ae.inflationDest.activate() =
@@ -139,7 +139,7 @@ simulateInflation(int ledgerVersion, int nbAccounts, int64& totCoins,
             bigDivideOrThrow(coinsToDole, votes.at(w), totVotes, ROUND_DOWN);
         if (protocolVersionStartsFrom(ledgerVersion, ProtocolVersion::V_10))
         {
-            LedgerTxn ltx(app.getLedgerTxnRoot());
+            LedgerTxn ltx(app.getTestLedgerTxn());
             auto header = ltx.loadHeader();
             auto winner =
                 stellar::loadAccount(ltx, getTestAccount(w).getPublicKey());
@@ -177,11 +177,11 @@ doInflation(Application& app, int ledgerVersion, int nbAccounts,
             std::function<int(int)> getVote, size_t expectedWinnerCount)
 {
     auto getFeePool = [&] {
-        LedgerTxn ltx(app.getLedgerTxnRoot());
+        LedgerTxn ltx(app.getTestLedgerTxn());
         return ltx.loadHeader().current().feePool;
     };
     auto getTotalCoins = [&] {
-        LedgerTxn ltx(app.getLedgerTxnRoot());
+        LedgerTxn ltx(app.getTestLedgerTxn());
         return ltx.loadHeader().current().totalCoins;
     };
 
@@ -198,7 +198,7 @@ doInflation(Application& app, int ledgerVersion, int nbAccounts,
         }
         else
         {
-            LedgerTxn ltx(app.getLedgerTxnRoot());
+            LedgerTxn ltx(app.getTestLedgerTxn());
             auto account =
                 stellar::loadAccount(ltx, getTestAccount(i).getPublicKey());
             auto const& ae = account.current().data.account();
@@ -254,7 +254,7 @@ doInflation(Application& app, int ledgerVersion, int nbAccounts,
         else
         {
             {
-                LedgerTxn ltx(app.getLedgerTxnRoot());
+                LedgerTxn ltx(app.getTestLedgerTxn());
                 auto account = stellar::loadAccount(ltx, k.getPublicKey());
                 auto const& ae = account.current().data.account();
                 REQUIRE(expectedBalances[i] == ae.balance);
@@ -310,16 +310,16 @@ TEST_CASE_VERSIONS("inflation total coins", "[tx][inflation]")
     auto root = TestAccount::createRoot(*app);
 
     auto getFeePool = [&] {
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         return ltx.loadHeader().current().feePool;
     };
     auto getTotalCoins = [&] {
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         return ltx.loadHeader().current().totalCoins;
     };
 
     auto updateVersion = [&] {
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         ltx.loadHeader().current().ledgerVersion =
             cfg.TESTING_UPGRADE_LEDGER_PROTOCOL_VERSION;
         ltx.commit();
@@ -447,19 +447,19 @@ TEST_CASE_VERSIONS("inflation", "[tx][inflation]")
     auto root = TestAccount::createRoot(*app);
 
     auto getFeePool = [&] {
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         return ltx.loadHeader().current().feePool;
     };
     auto getInflationSeq = [&] {
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         return ltx.loadHeader().current().inflationSeq;
     };
     auto getLedgerVersion = [&] {
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         return ltx.loadHeader().current().ledgerVersion;
     };
     auto getTotalCoins = [&] {
-        LedgerTxn ltx(app->getLedgerTxnRoot());
+        LedgerTxn ltx(app->getTestLedgerTxn());
         return ltx.loadHeader().current().totalCoins;
     };
 

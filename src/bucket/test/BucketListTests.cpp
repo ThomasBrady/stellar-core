@@ -670,6 +670,7 @@ TEST_CASE_VERSIONS("network config snapshots BucketList size", "[bucketlist]")
 {
     VirtualClock clock;
     Config cfg(getTestConfig(0, Config::TESTDB_IN_MEMORY_SQLITE));
+    cfg.DEPRECATED_SQL_LEDGER_STATE = true;
     cfg.USE_CONFIG_FOR_GENESIS = true;
 
     auto app = createTestApplication<BucketTestApplication>(clock, cfg);
@@ -696,7 +697,7 @@ TEST_CASE_VERSIONS("network config snapshots BucketList size", "[bucketlist]")
 
             uint64_t correctAverage = sum / correctWindow.size();
 
-            LedgerTxn ltx(app->getLedgerTxnRoot(), false,
+            LedgerTxn ltx(app->getTestLedgerTxn(), false,
                           TransactionMode::READ_ONLY_WITHOUT_SQL_TXN);
             REQUIRE(networkConfig.getAverageBucketListSize() == correctAverage);
 
@@ -772,7 +773,7 @@ TEST_CASE_VERSIONS("eviction scan", "[bucketlist]")
             auto& bl = bm.getBucketList();
 
             auto& networkCfg = [&]() -> SorobanNetworkConfig& {
-                LedgerTxn ltx(app->getLedgerTxnRoot());
+                LedgerTxn ltx(app->getTestLedgerTxn());
                 return app->getLedgerManager().getMutableSorobanNetworkConfig();
             }();
 
@@ -817,7 +818,7 @@ TEST_CASE_VERSIONS("eviction scan", "[bucketlist]")
 
             auto checkIfEntryExists = [&](std::set<LedgerKey> const& keys,
                                           bool shouldExist) {
-                LedgerTxn ltx(app->getLedgerTxnRoot());
+                LedgerTxn ltx(app->getTestLedgerTxn());
                 for (auto const& key : keys)
                 {
                     auto txle = ltx.loadWithoutRecord(key);
@@ -1030,7 +1031,7 @@ TEST_CASE_VERSIONS("eviction scan", "[bucketlist]")
                     lm.setNextLedgerEntryBatchForBucketTesting({}, {ttlLe}, {});
                     closeLedger(*app);
 
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     auto firstEntry = ltx.loadWithoutRecord(*entryToUpdate);
                     REQUIRE(static_cast<bool>(firstEntry));
 

@@ -474,14 +474,14 @@ TEST_CASE("manualclose", "[commandhandler]")
             submitTx(txFrame->getEnvelope(), retStr);
 
             {
-                LedgerTxn lookupTx(app->getLedgerTxnRoot());
+                LedgerTxn lookupTx(app->getTestLedgerTxn());
                 auto entry = lookupTx.load(LedgerEntryKey(dle));
                 REQUIRE(!entry);
             }
 
             submitClose(noLedgerSeq, noCloseTime, retStr);
 
-            LedgerTxn lookupTx(app->getLedgerTxnRoot());
+            LedgerTxn lookupTx(app->getTestLedgerTxn());
             auto entry = lookupTx.load(LedgerEntryKey(dle));
             REQUIRE(entry);
         }
@@ -508,7 +508,7 @@ TEST_CASE("manualclose", "[commandhandler]")
             txFrame->addSignature(root);
 
             {
-                LedgerTxn checkLtx(app->getLedgerTxnRoot());
+                LedgerTxn checkLtx(app->getTestLedgerTxn());
                 auto valid = txFrame->checkValid(*app, checkLtx, 0, 0, 0);
                 REQUIRE(valid);
             }
@@ -516,7 +516,7 @@ TEST_CASE("manualclose", "[commandhandler]")
             submitTx(txFrame->getEnvelope(), retStr);
 
             {
-                LedgerTxn lookupTx(app->getLedgerTxnRoot());
+                LedgerTxn lookupTx(app->getTestLedgerTxn());
                 auto entry = lookupTx.load(LedgerEntryKey(dle));
                 REQUIRE(!entry);
             }
@@ -526,7 +526,7 @@ TEST_CASE("manualclose", "[commandhandler]")
                 submitClose(noLedgerSeq, std::make_optional<TimePoint>(maxTime),
                             retStr);
 
-                LedgerTxn lookupTx(app->getLedgerTxnRoot());
+                LedgerTxn lookupTx(app->getTestLedgerTxn());
                 auto entry = lookupTx.load(LedgerEntryKey(dle));
                 REQUIRE(entry);
             }
@@ -536,7 +536,7 @@ TEST_CASE("manualclose", "[commandhandler]")
                 submitClose(noLedgerSeq,
                             std::make_optional<TimePoint>(maxTime + 1), retStr);
 
-                LedgerTxn lookupTx(app->getLedgerTxnRoot());
+                LedgerTxn lookupTx(app->getTestLedgerTxn());
                 auto entry = lookupTx.load(LedgerEntryKey(dle));
                 REQUIRE(!entry);
             }

@@ -433,7 +433,7 @@ TEST_CASE_VERSIONS("create offer", "[tx][offers]")
             for_versions_from(10, *app, [&] {
                 int64_t usdBuyingLiabilities = 0;
                 {
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     auto trustLine = stellar::loadTrustLine(ltx, a1, usd);
                     usdBuyingLiabilities =
                         trustLine.getBuyingLiabilities(ltx.loadHeader());
@@ -2350,7 +2350,7 @@ TEST_CASE_VERSIONS("create offer", "[tx][offers]")
     SECTION("modify offer assets with liabilities")
     {
         auto getLiabilities = [&](TestAccount& acc) {
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             auto account = stellar::loadAccount(ltx, acc.getPublicKey());
             Liabilities res;
             if (account)
@@ -2361,7 +2361,7 @@ TEST_CASE_VERSIONS("create offer", "[tx][offers]")
             return res;
         };
         auto getAssetLiabilities = [&](TestAccount& acc, Asset const& asset) {
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             auto trust = stellar::loadTrustLine(ltx, acc.getPublicKey(), asset);
             Liabilities res;
             if (trust)
@@ -3005,7 +3005,7 @@ TEST_CASE_VERSIONS("create offer", "[tx][offers]")
                  source.op(endSponsoringFutureReserves())},
                 {sponsor});
 
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             TransactionMetaFrame txm(ltx.loadHeader().current().ledgerVersion);
             REQUIRE(tx->checkValid(*app, ltx, 0, 0, 0));
             REQUIRE(tx->apply(*app, ltx, txm));
@@ -3030,7 +3030,7 @@ TEST_CASE_VERSIONS("create offer", "[tx][offers]")
                  acc.op(endSponsoringFutureReserves())},
                 {*sponsor});
 
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             auto expOfferID = ltx.loadHeader().current().idPool + 1;
 
             TransactionMetaFrame txm(ltx.loadHeader().current().ledgerVersion);
@@ -3114,7 +3114,7 @@ TEST_CASE_VERSIONS("create offer", "[tx][offers]")
                                 OfferState::DELETED, sponsor);
                         });
 
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     checkSponsorship(ltx, offerKey(o1.sellerID, o1.offerID), 1,
                                      &b.getPublicKey());
                     checkSponsorship(ltx, offerKey(o2.sellerID, o2.offerID), 1,
@@ -3136,7 +3136,7 @@ TEST_CASE_VERSIONS("create offer", "[tx][offers]")
                                 OfferState::DELETED, sponsor);
                         });
 
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     checkSponsorship(ltx, offerKey(o2.sellerID, o2.offerID), 1,
                                      &b.getPublicKey());
                     checkSponsorship(ltx, offerKey(o3.sellerID, o3.offerID), 1,
@@ -3158,7 +3158,7 @@ TEST_CASE_VERSIONS("create offer", "[tx][offers]")
                                 OfferState::DELETED, sponsor);
                         });
 
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     checkSponsorship(ltx, offerKey(o2.sellerID, o2.offerID), 1,
                                      &b.getPublicKey());
                     checkSponsorship(ltx, offerKey(o3.sellerID, o3.offerID), 1,
@@ -3179,7 +3179,7 @@ TEST_CASE_VERSIONS("create offer", "[tx][offers]")
                                 OfferState::DELETED, sponsor);
                         });
 
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     checkSponsorship(ltx, offerKey(o3.sellerID, o3.offerID), 1,
                                      &b.getPublicKey());
                     checkSponsorship(ltx, a1, 0, nullptr, 2, 2, 0, 0);
@@ -3200,7 +3200,7 @@ TEST_CASE_VERSIONS("create offer", "[tx][offers]")
                                 OfferState::DELETED, sponsor);
                         });
 
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     checkSponsorship(ltx, offerKey(o3.sellerID, o3.offerID), 1,
                                      &b.getPublicKey());
                     checkSponsorship(ltx, a1, 0, nullptr, 2, 2, 0, 0);
@@ -3221,7 +3221,7 @@ TEST_CASE_VERSIONS("create offer", "[tx][offers]")
                                 OfferState::DELETED, sponsor);
                         });
 
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     checkSponsorship(ltx, a1, 0, nullptr, 2, 2, 0, 0);
                     checkSponsorship(ltx, a2, 0, nullptr, 2, 2, 0, 0);
                     checkSponsorship(ltx, b, 0, nullptr, 2, 2, 0, 0);
@@ -3240,7 +3240,7 @@ TEST_CASE_VERSIONS("create offer", "[tx][offers]")
                                 {buying, selling, Price{1, 1}, 50}, sponsor);
                         });
 
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     checkSponsorship(ltx, a1, 0, nullptr, 2, 2, 0, 0);
                     checkSponsorship(ltx, a2, 0, nullptr, 2, 2, 0, 0);
                     checkSponsorship(ltx, b, 0, nullptr, 3, 2, 0, !!sponsor);
@@ -3335,7 +3335,7 @@ TEST_CASE_VERSIONS("create offer", "[tx][offers]")
                                 OfferState::DELETED, sponsor);
                         });
 
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     checkSponsorship(ltx, offerKey(o1.sellerID, o1.offerID), 1,
                                      &a2.getPublicKey());
                     checkSponsorship(ltx, offerKey(o2.sellerID, o2.offerID), 1,
@@ -3357,7 +3357,7 @@ TEST_CASE_VERSIONS("create offer", "[tx][offers]")
                                 OfferState::DELETED, sponsor);
                         });
 
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     checkSponsorship(ltx, offerKey(o2.sellerID, o2.offerID), 1,
                                      &a2.getPublicKey());
                     checkSponsorship(ltx, offerKey(o3.sellerID, o3.offerID), 1,
@@ -3379,7 +3379,7 @@ TEST_CASE_VERSIONS("create offer", "[tx][offers]")
                                 OfferState::DELETED, sponsor);
                         });
 
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     checkSponsorship(ltx, offerKey(o2.sellerID, o2.offerID), 1,
                                      &a2.getPublicKey());
                     checkSponsorship(ltx, offerKey(o3.sellerID, o3.offerID), 1,
@@ -3400,7 +3400,7 @@ TEST_CASE_VERSIONS("create offer", "[tx][offers]")
                                 OfferState::DELETED, sponsor);
                         });
 
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     checkSponsorship(ltx, offerKey(o3.sellerID, o3.offerID), 1,
                                      &a1.getPublicKey());
                     checkSponsorship(ltx, a1, 0, nullptr, 2, 2, 1, 0);
@@ -3421,7 +3421,7 @@ TEST_CASE_VERSIONS("create offer", "[tx][offers]")
                                 OfferState::DELETED, sponsor);
                         });
 
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     checkSponsorship(ltx, offerKey(o3.sellerID, o3.offerID), 1,
                                      &a1.getPublicKey());
                     checkSponsorship(ltx, a1, 0, nullptr, 2, 2, 1, 0);
@@ -3442,7 +3442,7 @@ TEST_CASE_VERSIONS("create offer", "[tx][offers]")
                                 OfferState::DELETED, sponsor);
                         });
 
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     checkSponsorship(ltx, a1, 0, nullptr, 2, 2, 0, 0);
                     checkSponsorship(ltx, a2, 0, nullptr, 2, 2, 0, 0);
                     checkSponsorship(ltx, b, 0, nullptr, 2, cExt, 0, 0);
@@ -3461,7 +3461,7 @@ TEST_CASE_VERSIONS("create offer", "[tx][offers]")
                                 {buying, selling, Price{1, 1}, 50}, sponsor);
                         });
 
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     checkSponsorship(ltx, a1, 0, nullptr, 2, 2, 0, 0);
                     checkSponsorship(ltx, a2, 0, nullptr, 2, 2, 0, 0);
                     int bExt = 0;
@@ -3561,7 +3561,7 @@ TEST_CASE_VERSIONS("create offer", "[tx][offers]")
                                 OfferState::DELETED, &c);
                         });
 
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     checkSponsorship(ltx, offerKey(o1.sellerID, o1.offerID), 1,
                                      &c.getPublicKey());
                     checkSponsorship(ltx, offerKey(o2.sellerID, o2.offerID), 1,
@@ -3583,7 +3583,7 @@ TEST_CASE_VERSIONS("create offer", "[tx][offers]")
                                 OfferState::DELETED, &c);
                         });
 
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     checkSponsorship(ltx, offerKey(o2.sellerID, o2.offerID), 1,
                                      &c.getPublicKey());
                     checkSponsorship(ltx, offerKey(o3.sellerID, o3.offerID), 1,
@@ -3605,7 +3605,7 @@ TEST_CASE_VERSIONS("create offer", "[tx][offers]")
                                 OfferState::DELETED, &c);
                         });
 
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     checkSponsorship(ltx, offerKey(o2.sellerID, o2.offerID), 1,
                                      &c.getPublicKey());
                     checkSponsorship(ltx, offerKey(o3.sellerID, o3.offerID), 1,
@@ -3626,7 +3626,7 @@ TEST_CASE_VERSIONS("create offer", "[tx][offers]")
                                 OfferState::DELETED, &c);
                         });
 
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     checkSponsorship(ltx, offerKey(o3.sellerID, o3.offerID), 1,
                                      &c.getPublicKey());
                     checkSponsorship(ltx, a1, 0, nullptr, 2, 2, 0, 0);
@@ -3647,7 +3647,7 @@ TEST_CASE_VERSIONS("create offer", "[tx][offers]")
                                 OfferState::DELETED, &c);
                         });
 
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     checkSponsorship(ltx, offerKey(o3.sellerID, o3.offerID), 1,
                                      &c.getPublicKey());
                     checkSponsorship(ltx, a1, 0, nullptr, 2, 2, 0, 0);
@@ -3668,7 +3668,7 @@ TEST_CASE_VERSIONS("create offer", "[tx][offers]")
                                 OfferState::DELETED, &c);
                         });
 
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     checkSponsorship(ltx, a1, 0, nullptr, 2, 2, 0, 0);
                     checkSponsorship(ltx, a2, 0, nullptr, 2, 2, 0, 0);
                     checkSponsorship(ltx, b, 0, nullptr, 2, 2, 0, 0);
@@ -3687,7 +3687,7 @@ TEST_CASE_VERSIONS("create offer", "[tx][offers]")
                                 {buying, selling, Price{1, 1}, 50}, &c);
                         });
 
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     checkSponsorship(ltx, a1, 0, nullptr, 2, 2, 0, 0);
                     checkSponsorship(ltx, a2, 0, nullptr, 2, 2, 0, 0);
                     checkSponsorship(ltx, b, 0, nullptr, 3, 2, 0, 1);
@@ -3740,7 +3740,7 @@ TEST_CASE_VERSIONS("create offer", "[tx][offers]")
                          a1.op(endSponsoringFutureReserves())},
                         {a1, a2});
 
-                    LedgerTxn ltx(app->getLedgerTxnRoot());
+                    LedgerTxn ltx(app->getTestLedgerTxn());
                     auto expOfferID = ltx.loadHeader().current().idPool + 1;
 
                     TransactionMetaFrame txm(
@@ -3757,7 +3757,7 @@ TEST_CASE_VERSIONS("create offer", "[tx][offers]")
                 });
 
             // the offer should still not be sponsored
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             checkSponsorship(ltx, offerKey(o1.sellerID, o1.offerID), 0,
                              nullptr);
         });
@@ -3785,7 +3785,7 @@ TEST_CASE_VERSIONS("create offer", "[tx][offers]")
                      a1.op(endSponsoringFutureReserves())},
                     {a1});
 
-                LedgerTxn ltx(app->getLedgerTxnRoot());
+                LedgerTxn ltx(app->getTestLedgerTxn());
                 TransactionMetaFrame txm(
                     ltx.loadHeader().current().ledgerVersion);
                 REQUIRE(tx->checkValid(*app, ltx, 0, 0, 0));
@@ -3794,7 +3794,7 @@ TEST_CASE_VERSIONS("create offer", "[tx][offers]")
             }
 
             // the offer should still not be sponsored
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             checkSponsorship(ltx, offerKey(o1.sellerID, o1.offerID), 0,
                              nullptr);
         });
@@ -3843,7 +3843,7 @@ TEST_CASE_VERSIONS("create offer", "[tx][offers]")
             uint64_t offerIdXlmUsd = 0;
             uint64_t offerIdIdrXlm = 0;
             {
-                LedgerTxn ltx(app->getLedgerTxnRoot());
+                LedgerTxn ltx(app->getTestLedgerTxn());
                 offerIdUsdXlm = ltx.loadHeader().current().idPool + 1;
                 offerIdXlmUsd = ltx.loadHeader().current().idPool + 2;
                 offerIdIdrXlm = ltx.loadHeader().current().idPool + 3;
@@ -3867,7 +3867,7 @@ TEST_CASE_VERSIONS("create offer", "[tx][offers]")
             issuer.denyTrust(usd, acc1, flagOp);
 
             {
-                LedgerTxn ltx(app->getLedgerTxnRoot());
+                LedgerTxn ltx(app->getTestLedgerTxn());
                 REQUIRE(!loadOffer(ltx, acc1.getPublicKey(), offerIdUsdXlm));
                 REQUIRE(!loadOffer(ltx, acc1.getPublicKey(), offerIdXlmUsd));
                 REQUIRE(loadOffer(ltx, acc1.getPublicKey(), offerIdIdrXlm));
@@ -3961,7 +3961,7 @@ TEST_CASE_VERSIONS("liabilities match created offer", "[tx][offers]")
         Liabilities liabilities;
         int64_t offerAmount = 0;
         {
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             auto header = ltx.loadHeader();
             auto entry =
                 stellar::loadOffer(ltx, a1.getPublicKey(), offer.key.offerID);

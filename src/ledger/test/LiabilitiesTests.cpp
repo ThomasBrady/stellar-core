@@ -60,7 +60,7 @@ TEST_CASE_VERSIONS("liabilities", "[ledger][liabilities]")
             le.data.type(ACCOUNT);
             le.data.account() = ae;
 
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             auto header = ltx.loadHeader();
             auto acc = ltx.create(le);
             bool res =
@@ -88,7 +88,7 @@ TEST_CASE_VERSIONS("liabilities", "[ledger][liabilities]")
             int32_t reserve = lm.getLastReserve();
             uint32_t ledgerVersion = 0;
             {
-                LedgerTxn ltx(app->getLedgerTxnRoot());
+                LedgerTxn ltx(app->getTestLedgerTxn());
                 ledgerVersion = ltx.loadHeader().current().ledgerVersion;
             }
 
@@ -132,7 +132,7 @@ TEST_CASE_VERSIONS("liabilities", "[ledger][liabilities]")
                 le.data.type(ACCOUNT);
                 le.data.account() = ae;
 
-                LedgerTxn ltx(app->getLedgerTxnRoot());
+                LedgerTxn ltx(app->getTestLedgerTxn());
                 auto header = ltx.loadHeader();
                 auto acc = ltx.create(le);
                 bool res = stellar::addSellingLiabilities(header, acc,
@@ -308,7 +308,7 @@ TEST_CASE_VERSIONS("liabilities", "[ledger][liabilities]")
             le.data.type(ACCOUNT);
             le.data.account() = ae;
 
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             auto header = ltx.loadHeader();
             auto acc = ltx.create(le);
             bool res =
@@ -336,7 +336,7 @@ TEST_CASE_VERSIONS("liabilities", "[ledger][liabilities]")
                                         int64_t deltaLiabilities) {
             uint32_t ledgerVersion = 0;
             {
-                LedgerTxn ltx(app->getLedgerTxnRoot());
+                LedgerTxn ltx(app->getTestLedgerTxn());
                 ledgerVersion = ltx.loadHeader().current().ledgerVersion;
             }
 
@@ -373,7 +373,7 @@ TEST_CASE_VERSIONS("liabilities", "[ledger][liabilities]")
             le.data.type(ACCOUNT);
             le.data.account() = ae;
 
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             auto header = ltx.loadHeader();
             auto acc = ltx.create(le);
             bool res =
@@ -560,7 +560,7 @@ TEST_CASE_VERSIONS("liabilities", "[ledger][liabilities]")
             le.data.type(TRUSTLINE);
             le.data.trustLine() = tl;
 
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             auto header = ltx.loadHeader();
             auto trust = ltx.create(le);
             bool res =
@@ -595,7 +595,7 @@ TEST_CASE_VERSIONS("liabilities", "[ledger][liabilities]")
                 le.data.type(TRUSTLINE);
                 le.data.trustLine() = tl;
 
-                LedgerTxn ltx(app->getLedgerTxnRoot());
+                LedgerTxn ltx(app->getTestLedgerTxn());
                 auto header = ltx.loadHeader();
                 auto trust = ltx.create(le);
                 bool res = stellar::addSellingLiabilities(header, trust,
@@ -703,7 +703,7 @@ TEST_CASE_VERSIONS("liabilities", "[ledger][liabilities]")
             le.data.type(TRUSTLINE);
             le.data.trustLine() = tl;
 
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             auto header = ltx.loadHeader();
             auto trust = ltx.create(le);
             bool res =
@@ -738,7 +738,7 @@ TEST_CASE_VERSIONS("liabilities", "[ledger][liabilities]")
             le.data.type(TRUSTLINE);
             le.data.trustLine() = tl;
 
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             auto header = ltx.loadHeader();
             auto trust = ltx.create(le);
             bool res =
@@ -860,7 +860,7 @@ TEST_CASE_VERSIONS("balance with liabilities", "[ledger][liabilities]")
                 le.data.type(ACCOUNT);
                 le.data.account() = ae;
 
-                LedgerTxn ltx(app->getLedgerTxnRoot());
+                LedgerTxn ltx(app->getTestLedgerTxn());
                 auto header = ltx.loadHeader();
                 auto acc = ltx.create(le);
                 bool res = stellar::addBalance(header, acc, deltaBalance);
@@ -886,7 +886,7 @@ TEST_CASE_VERSIONS("balance with liabilities", "[ledger][liabilities]")
             int32_t reserve = lm.getLastReserve();
             uint32_t ledgerVersion = 0;
             {
-                LedgerTxn ltx(app->getLedgerTxnRoot());
+                LedgerTxn ltx(app->getTestLedgerTxn());
                 ledgerVersion = ltx.loadHeader().current().ledgerVersion;
             }
 
@@ -1020,7 +1020,7 @@ TEST_CASE_VERSIONS("balance with liabilities", "[ledger][liabilities]")
             le.data.type(ACCOUNT);
             le.data.account() = ae;
 
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             auto header = ltx.loadHeader();
             auto acc = ltx.create(le);
 
@@ -1068,7 +1068,7 @@ TEST_CASE_VERSIONS("balance with liabilities", "[ledger][liabilities]")
             int32_t reserve = lm.getLastReserve();
             uint32_t ledgerVersion = 0;
             {
-                LedgerTxn ltx(app->getLedgerTxnRoot());
+                LedgerTxn ltx(app->getTestLedgerTxn());
                 ledgerVersion = ltx.loadHeader().current().ledgerVersion;
             }
 
@@ -1172,7 +1172,7 @@ TEST_CASE_VERSIONS("balance with liabilities", "[ledger][liabilities]")
             le.data.type(TRUSTLINE);
             le.data.trustLine() = tl;
 
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             auto header = ltx.loadHeader();
             auto trust = ltx.create(le);
             bool res = stellar::addBalance(header, trust, deltaBalance);
@@ -1265,7 +1265,7 @@ TEST_CASE_VERSIONS("available balance and limit", "[ledger][liabilities]")
             le.data.type(ACCOUNT);
             le.data.account() = ae;
 
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             auto header = ltx.loadHeader();
             auto acc = ltx.create(le);
             auto availableBalance =
@@ -1280,7 +1280,7 @@ TEST_CASE_VERSIONS("available balance and limit", "[ledger][liabilities]")
             int32_t reserve = lm.getLastReserve();
             uint32_t ledgerVersion = 0;
             {
-                LedgerTxn ltx(app->getLedgerTxnRoot());
+                LedgerTxn ltx(app->getTestLedgerTxn());
                 ledgerVersion = ltx.loadHeader().current().ledgerVersion;
             }
 
@@ -1365,7 +1365,7 @@ TEST_CASE_VERSIONS("available balance and limit", "[ledger][liabilities]")
             le.data.type(ACCOUNT);
             le.data.account() = ae;
 
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             auto header = ltx.loadHeader();
             auto acc = ltx.create(le);
             auto availableLimit =
@@ -1382,7 +1382,7 @@ TEST_CASE_VERSIONS("available balance and limit", "[ledger][liabilities]")
                                        int64_t initBuyingLiabilities) {
             uint32_t ledgerVersion = 0;
             {
-                LedgerTxn ltx(app->getLedgerTxnRoot());
+                LedgerTxn ltx(app->getTestLedgerTxn());
                 ledgerVersion = ltx.loadHeader().current().ledgerVersion;
             }
 
@@ -1465,7 +1465,7 @@ TEST_CASE_VERSIONS("available balance and limit", "[ledger][liabilities]")
             le.data.type(TRUSTLINE);
             le.data.trustLine() = tl;
 
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             auto header = ltx.loadHeader();
             auto trust = ltx.create(le);
             auto availableBalance =
@@ -1511,7 +1511,7 @@ TEST_CASE_VERSIONS("available balance and limit", "[ledger][liabilities]")
             le.data.type(TRUSTLINE);
             le.data.trustLine() = tl;
 
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             auto header = ltx.loadHeader();
             auto trust = ltx.create(le);
             auto availableLimit =
@@ -1560,7 +1560,7 @@ TEST_CASE_VERSIONS("available balance and limit", "[ledger][liabilities]")
             le.data.type(TRUSTLINE);
             le.data.trustLine() = tl;
 
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             auto header = ltx.loadHeader();
             auto trust = ltx.create(le);
             trust.current().data.trustLine().limit =

@@ -310,7 +310,7 @@ getTestConfig(int instanceNumber, Config::TestDbMode mode)
         thisConfig.FLOW_CONTROL_SEND_MORE_BATCH_SIZE = 10;
 
         // Tests default to using SQL for ledger state
-        thisConfig.DEPRECATED_SQL_LEDGER_STATE = true;
+        thisConfig.DEPRECATED_SQL_LEDGER_STATE = false;
 
 #ifdef BEST_OFFER_DEBUGGING
         thisConfig.BEST_OFFER_DEBUGGING_ENABLED = true;
@@ -541,7 +541,7 @@ for_versions(std::vector<uint32> const& versions, Application& app,
         versions.end())
     {
         {
-            LedgerTxn ltx(app.getLedgerTxnRoot());
+            LedgerTxn ltx(app.getTestLedgerTxn());
             REQUIRE(ltx.loadHeader().current().ledgerVersion ==
                     gTestingVersion);
         }

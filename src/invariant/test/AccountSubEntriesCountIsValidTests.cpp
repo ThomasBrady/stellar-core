@@ -160,7 +160,7 @@ updateAccountSubEntries(Application& app, LedgerEntry& leCurr,
         auto currPtr = std::make_shared<LedgerEntry>(leCurr);
         auto prevPtr = std::make_shared<LedgerEntry>(lePrev);
         updates.push_back(std::make_tuple(currPtr, prevPtr));
-        LedgerTxn ltx(app.getLedgerTxnRoot());
+        LedgerTxn ltx(app.getTestLedgerTxn());
         REQUIRE(!store(app, updates, &ltx));
     }
     {
@@ -340,7 +340,7 @@ TEST_CASE("Create account then add signers and subentries",
 
         if (le.data.account().numSubEntries != le.data.account().signers.size())
         {
-            LedgerTxn ltx(app->getLedgerTxnRoot());
+            LedgerTxn ltx(app->getTestLedgerTxn());
             REQUIRE(!store(*app, makeUpdateList(nullptr, {le}), &ltx));
         }
         {

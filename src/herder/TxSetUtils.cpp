@@ -161,6 +161,11 @@ TxSetUtils::getInvalidTxList(TxSetTransactions const& txs, Application& app,
                              bool returnEarlyOnFirstInvalidTx)
 {
     ZoneScoped;
+#ifdef BUILD_TESTS
+    //LedgerTxn ltx(app.getTestLedgerTxn(), /* shouldUpdateLastModified */ true,
+      //            TransactionMode::READ_ONLY_WITHOUT_SQL_TXN);
+    app.resetTestLedgerTxn();
+#endif
     LedgerTxn ltx(app.getLedgerTxnRoot(), /* shouldUpdateLastModified */ true,
                   TransactionMode::READ_ONLY_WITHOUT_SQL_TXN);
     if (protocolVersionStartsFrom(ltx.loadHeader().current().ledgerVersion,

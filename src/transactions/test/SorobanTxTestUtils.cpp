@@ -133,7 +133,7 @@ getContractBalance(Application& app, SCAddress const& contractID,
         makeVecSCVal({makeSymbolSCVal("Balance"), accountVal});
     balanceKey.contractData().durability = ContractDataDurability::PERSISTENT;
 
-    LedgerTxn ltx(app.getLedgerTxnRoot());
+    LedgerTxn ltx(app.getTestLedgerTxn());
     auto ltxe = ltx.load(balanceKey);
     if (!ltxe)
     {
@@ -751,7 +751,7 @@ SorobanTest::invokeArchivalOp(TransactionFrameBasePtr tx,
     REQUIRE(tx->getResult().feeCharged == baseCharged);
     // Charge the fee.
     {
-        LedgerTxn ltx(getApp().getLedgerTxnRoot());
+        LedgerTxn ltx(getApp().getTestLedgerTxn());
         // Imitate surge pricing by charging at a higher rate than base
         // fee.
         tx->processFeeSeqNum(ltx, 300);
@@ -770,7 +770,7 @@ SorobanTest::invokeArchivalOp(TransactionFrameBasePtr tx,
     TransactionMetaFrame txm(getLedgerVersion());
     REQUIRE(invokeTx(tx, &txm));
     {
-        LedgerTxn ltx(getApp().getLedgerTxnRoot());
+        LedgerTxn ltx(getApp().getTestLedgerTxn());
         tx->processPostApply(getApp(), ltx, txm);
         ltx.commit();
     }
@@ -798,7 +798,7 @@ SorobanTest::uploadWasm(RustBuf const& wasm, SorobanResources& uploadResources)
     Hash expectedWasmHash = sha256(expectedWasm);
     auto contractCodeLedgerKey = contractCodeKey(expectedWasmHash);
     {
-        LedgerTxn ltx(getApp().getLedgerTxnRoot());
+        LedgerTxn ltx(getApp().getTestLedgerTxn());
         auto ltxe = ltx.loadWithoutRecord(contractCodeLedgerKey);
         REQUIRE(ltxe);
         REQUIRE(ltxe.current().data.contractCode().code == expectedWasm);
@@ -825,7 +825,7 @@ SorobanTest::createContract(ContractIDPreimage const& idPreimage,
     auto contractInstanceKey = makeContractInstanceKey(contractAddress);
     {
         // Verify the created instance.
-        LedgerTxn ltx(getApp().getLedgerTxnRoot());
+        LedgerTxn ltx(getApp().getTestLedgerTxn());
         auto ltxe = ltx.load(contractInstanceKey);
         REQUIRE(ltxe);
 
@@ -847,7 +847,7 @@ SorobanTest::getRentFeeForExtension(xdr::xvector<LedgerKey> const& keys,
 
 {
     rust::Vec<CxxLedgerEntryRentChange> rustEntryRentChanges;
-    LedgerTxn ltx(getApp().getLedgerTxnRoot());
+    LedgerTxn ltx(getApp().getTestLedgerTxn());
     for (auto const& key : keys)
     {
         auto ltxe = ltx.loadWithoutRecord(key);
@@ -989,7 +989,7 @@ SorobanTest::createRestoreTx(SorobanResources const& resources, uint32_t fee,
 bool
 SorobanTest::isTxValid(TransactionFrameBasePtr tx)
 {
-    LedgerTxn ltx(getApp().getLedgerTxnRoot());
+    LedgerTxn ltx(getApp().getTestLedgerTxn());
     auto ret = tx->checkValid(getApp(), ltx, 0, 0, 0);
     return ret;
 }
@@ -1012,7 +1012,7 @@ SorobanTest::invokeTx(TransactionFrameBasePtr tx, TransactionMetaFrame* txMeta)
     }
     else
     {
-        LedgerTxn ltx(getApp().getLedgerTxnRoot());
+        LedgerTxn ltx(getApp().getTestLedgerTxn());
         REQUIRE(tx->checkValid(getApp(), ltx, 0, 0, 0));
         bool res = tx->apply(getApp(), ltx, *txMeta);
         ltx.commit();
@@ -1023,7 +1023,7 @@ SorobanTest::invokeTx(TransactionFrameBasePtr tx, TransactionMetaFrame* txMeta)
 uint32_t
 SorobanTest::getTTL(LedgerKey const& k)
 {
-    LedgerTxn ltx(getApp().getLedgerTxnRoot());
+    LedgerTxn ltx(getApp().getTestLedgerTxn());
     auto ltxe = ltx.loadWithoutRecord(k);
     REQUIRE(ltxe);
 
@@ -1037,7 +1037,7 @@ bool
 SorobanTest::isEntryLive(LedgerKey const& k, uint32_t ledgerSeq)
 {
     auto ttlKey = getTTLKey(k);
-    LedgerTxn ltx(getApp().getLedgerTxnRoot());
+    LedgerTxn ltx(getApp().getTestLedgerTxn());
     auto ttlLtxe = ltx.loadWithoutRecord(ttlKey);
     REQUIRE(ttlLtxe);
     return isLive(ttlLtxe.current(), ledgerSeq);
@@ -1274,14 +1274,14 @@ AssetContractTestClient::transfer(TestAccount& fromAcc, SCAddress const& toAddr,
         {
             // From is an account so it should never have a contract data
             // balance
-            LedgerTxn ltx(mApp.getLedgerTxnRoot());
+            LedgerTxn ltx(mApp.getTestLedgerTxn());
             REQUIRE(!ltx.load(makeContractDataBalanceKey(fromVal.address())));
         }
 
         if (toIsIssuer)
         {
             // make sure we didn't create an entry for the issuer
-            LedgerTxn ltx(mApp.getLedgerTxnRoot());
+            LedgerTxn ltx(mApp.getTestLedgerTxn());
             REQUIRE(!ltx.load(makeContractDataBalanceKey(toAddr)));
         }
     }
