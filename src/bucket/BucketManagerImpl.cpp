@@ -4,6 +4,7 @@
 
 #include "bucket/BucketManagerImpl.h"
 #include "bucket/Bucket.h"
+#include "bucket/BucketIndexImpl.h"
 #include "bucket/BucketInputIterator.h"
 #include "bucket/BucketList.h"
 #include "bucket/BucketListSnapshot.h"
@@ -909,6 +910,7 @@ BucketManagerImpl::addBatch(Application& app, uint32_t currLedger,
     {
         mSnapshotManager->updateCurrentSnapshot(
             std::make_unique<BucketListSnapshot>(*mBucketList, currLedger));
+        reportBucketEntryCountMetrics();
     }
 }
 
@@ -1520,5 +1522,73 @@ Config const&
 BucketManagerImpl::getConfig() const
 {
     return mApp.getConfig();
+}
+
+std::string
+to_string(LedgerEntryTypeAndDurability const type)
+{
+    switch (type)
+    {
+    case LedgerEntryTypeAndDurability::ACCOUNT:
+        return "ACCOUNT";
+    case LedgerEntryTypeAndDurability::TRUSTLINE:
+        return "TRUSTLINE";
+    case LedgerEntryTypeAndDurability::OFFER:
+        return "OFFER";
+    case LedgerEntryTypeAndDurability::DATA:
+        return "DATA";
+    case LedgerEntryTypeAndDurability::CLAIMABLE_BALANCE:
+        return "CLAIMABLE_BALANCE";
+    case LedgerEntryTypeAndDurability::LIQUIDITY_POOL:
+        return "LIQUIDITY_POOL";
+    case LedgerEntryTypeAndDurability::TEMPORARY_CONTRACT_DATA:
+        return "TEMPORARY_CONTRACT_DATA";
+    case LedgerEntryTypeAndDurability::PERSISTENT_CONTRACT_DATA:
+        return "PERSISTENT_CONTRACT_DATA";
+    case LedgerEntryTypeAndDurability::CONTRACT_CODE:
+        return "CONTRACT_CODE";
+    case LedgerEntryTypeAndDurability::CONFIG_SETTING:
+        return "CONFIG_SETTING";
+    case LedgerEntryTypeAndDurability::TTL:
+        return "TTL";
+    default:
+        throw std::runtime_error(
+            fmt::format(FMT_STRING("unknown LedgerEntryTypeAndDurability {:d}"),
+                        static_cast<uint32_t>(type)));
+    }
+}
+
+void
+BucketManagerImpl::reportBucketEntryCountMetrics()
+{
+    auto bucketEntryCounters = mBucketList->sumBucketEntryCounters();
+    for (auto& [type, count] : bucketEntryCounters.mEntryTypeCounts)
+    {
+        auto countsCounter = mBucketListEntryCounts.find(type);
+        if (countsCounter == mBucketListEntryCounts.end())
+        {
+
+            countsCounter =
+                mBucketListEntryCounts
+                    .emplace(type,
+                             mApp.getMetrics().NewCounter(
+                                 {"bucket", "entryCounts", to_string(type)}))
+                    .first;
+        }
+        countsCounter->second.set_count(count);
+
+        auto sizesCounter = mBucketListEntrySizes.find(type);
+        if (sizesCounter == mBucketListEntrySizes.end())
+        {
+            sizesCounter =
+                mBucketListEntrySizes
+                    .emplace(type,
+                             mApp.getMetrics().NewCounter(
+                                 {"bucket", "entrySizes", to_string(type)}))
+                    .first;
+        }
+        sizesCounter->second.set_count(
+            bucketEntryCounters.mEntryTypeSizes[type]);
+    }
 }
 }

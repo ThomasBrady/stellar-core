@@ -7,6 +7,7 @@
 #include "bucket/BucketManager.h"
 #include "crypto/Hex.h"
 #include "crypto/ShortHash.h"
+#include "ledger/LedgerTypeUtils.h"
 #include "main/Config.h"
 #include "util/BinaryFuseFilter.h"
 #include "util/Fs.h"
@@ -100,6 +101,79 @@ BucketIndexImpl<IndexT>::BucketIndexImpl(BucketManager& bm,
         std::vector<uint64_t> keyHashes;
         auto seed = shortHash::getShortHashInitKey();
 
+        auto countEntry = [&](BucketEntry const& be) {
+            auto ledgerEntryToLedgerEntryAndDurabilityType =
+                [&](LedgerEntryType let, bool isTemporaryEntry) {
+                    switch (let)
+                    {
+                    case ACCOUNT:
+                        return LedgerEntryTypeAndDurability::ACCOUNT;
+                        break;
+                    case TRUSTLINE:
+                        return LedgerEntryTypeAndDurability::TRUSTLINE;
+                        break;
+                    case OFFER:
+                        return LedgerEntryTypeAndDurability::OFFER;
+                        break;
+                    case DATA:
+                        return LedgerEntryTypeAndDurability::DATA;
+                        break;
+                    case CLAIMABLE_BALANCE:
+                        return LedgerEntryTypeAndDurability::CLAIMABLE_BALANCE;
+                        break;
+                    case LIQUIDITY_POOL:
+                        return LedgerEntryTypeAndDurability::LIQUIDITY_POOL;
+                        break;
+                    case CONTRACT_DATA:
+                        return isTemporaryEntry ? LedgerEntryTypeAndDurability::
+                                                      TEMPORARY_CONTRACT_DATA
+                                                : LedgerEntryTypeAndDurability::
+                                                      PERSISTENT_CONTRACT_DATA;
+                        break;
+                    case CONTRACT_CODE:
+                        return LedgerEntryTypeAndDurability::CONTRACT_CODE;
+                        break;
+                    case CONFIG_SETTING:
+                        return LedgerEntryTypeAndDurability::CONFIG_SETTING;
+                        break;
+                    case TTL:
+                        return LedgerEntryTypeAndDurability::TTL;
+                        break;
+                    default:
+                        throw std::runtime_error(fmt::format(
+                            FMT_STRING("Unknown LedgerEntryType {}"), let));
+                        break;
+                    }
+                };
+            auto bet = be.type();
+            LedgerEntryType let;
+            bool isTemp = false;
+            if (bet == INITENTRY || bet == LIVEENTRY)
+            {
+                let = be.liveEntry().data.type();
+                if (let == CONTRACT_DATA)
+                {
+                    isTemp = isTemporaryEntry(be.liveEntry().data);
+                }
+            }
+            else if (bet == DEADENTRY)
+            {
+                let = be.deadEntry().type();
+                if (let == CONTRACT_DATA)
+                {
+                    isTemp = isTemporaryEntry(be.deadEntry());
+                }
+            }
+            else
+            {
+                // Do not count meta entries.
+                return;
+            }
+            auto ledt = ledgerEntryToLedgerEntryAndDurabilityType(let, isTemp);
+            mData.counters.mEntryTypeCounts[ledt]++;
+            mData.counters.mEntryTypeSizes[ledt] += xdr::xdr_size(be);
+        };
+
         while (in && in.readOne(be))
         {
             // peridocially check if bucket manager is exiting to stop indexing
@@ -170,6 +244,7 @@ BucketIndexImpl<IndexT>::BucketIndexImpl(BucketManager& bm,
                 {
                     mData.keysToOffset.emplace_back(key, pos);
                 }
+                countEntry(be);
             }
 
             pos = in.pos();
@@ -579,5 +654,12 @@ void
 BucketIndexImpl<BucketIndex::RangeIndex>::markBloomLookup() const
 {
     mBloomLookupMeter.Mark();
+}
+
+template <class IndexT>
+BucketEntryCounters const&
+BucketIndexImpl<IndexT>::getBucketEntryCounters() const
+{
+    return mData.counters;
 }
 }

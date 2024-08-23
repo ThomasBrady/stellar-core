@@ -382,5 +382,6 @@ class BucketManager : NonMovableOrCopyable
     scheduleVerifyReferencedBucketsWork() = 0;
 
     virtual Config const& getConfig() const = 0;
+    virtual void reportBucketEntryCountMetrics() = 0;
 };
 }

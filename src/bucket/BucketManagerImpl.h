@@ -31,6 +31,9 @@ class Application;
 class Bucket;
 class BucketList;
 class BucketSnapshotManager;
+struct BucketEntryCounters;
+enum class LedgerEntryTypeAndDurability : uint32_t;
+
 struct HistoryArchiveState;
 
 class BucketManagerImpl : public BucketManager
@@ -59,6 +62,10 @@ class BucketManagerImpl : public BucketManager
     EvictionCounters mBucketListEvictionCounters;
     MergeCounters mMergeCounters;
     std::shared_ptr<EvictionStatistics> mEvictionStatistics{};
+    std::map<LedgerEntryTypeAndDurability, medida::Counter&>
+        mBucketListEntryCounts;
+    std::map<LedgerEntryTypeAndDurability, medida::Counter&>
+        mBucketListEntrySizes;
 
     std::future<EvictionResult> mEvictionFuture{};
 
@@ -188,6 +195,7 @@ class BucketManagerImpl : public BucketManager
     std::shared_ptr<BasicWork> scheduleVerifyReferencedBucketsWork() override;
 
     Config const& getConfig() const override;
+    void reportBucketEntryCountMetrics() override;
 };
 
 #define SKIP_1 50

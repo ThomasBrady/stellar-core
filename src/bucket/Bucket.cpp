@@ -854,4 +854,28 @@ Bucket::getBucketVersion(std::shared_ptr<Bucket const> const& bucket)
     BucketInputIterator it(bucket);
     return it.getMetadata().ledgerVersion;
 }
+
+BucketEntryCounters
+Bucket::getBucketEntryCounters() const
+{
+    if (mIndex)
+    {
+        return mIndex->getBucketEntryCounters();
+    }
+    return {};
+}
+
+BucketEntryCounters&
+BucketEntryCounters::operator+=(BucketEntryCounters const& other)
+{
+    for (auto [type, count] : other.mEntryTypeCounts)
+    {
+        this->mEntryTypeCounts[type] += count;
+    }
+    for (auto [type, size] : other.mEntryTypeSizes)
+    {
+        this->mEntryTypeSizes[type] += size;
+    }
+    return *this;
+}
 }

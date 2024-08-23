@@ -4,6 +4,7 @@
 
 #include "BucketList.h"
 #include "bucket/Bucket.h"
+#include "bucket/BucketIndexImpl.h"
 #include "bucket/BucketInputIterator.h"
 #include "bucket/BucketManager.h"
 #include "bucket/BucketSnapshot.h"
@@ -629,6 +630,21 @@ BucketList::addBatch(Application& app, uint32_t currLedger,
     {
         resolveAnyReadyFutures();
     }
+}
+
+BucketEntryCounters
+BucketList::sumBucketEntryCounters() const
+{
+    BucketEntryCounters counters;
+    for (auto const& lev : mLevels)
+    {
+        for (auto const& b : {lev.getCurr(), lev.getSnap()})
+        {
+            auto c = b->getBucketEntryCounters();
+            counters += c;
+        }
+    }
+    return counters;
 }
 
 void

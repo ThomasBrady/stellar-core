@@ -9,6 +9,7 @@
 #include "util/ProtocolVersion.h"
 #include "xdr/Stellar-ledger.h"
 #include <list>
+#include <map>
 #include <optional>
 #include <string>
 
@@ -43,6 +44,7 @@ class BucketManager;
 class SearchableBucketListSnapshot;
 struct EvictionResultEntry;
 class EvictionStatistics;
+struct BucketEntryCounters;
 
 class Bucket : public std::enable_shared_from_this<Bucket>,
                public NonMovableOrCopyable
@@ -179,7 +181,37 @@ class Bucket : public std::enable_shared_from_this<Bucket>,
     static uint32_t getBucketVersion(std::shared_ptr<Bucket> const& bucket);
     static uint32_t
     getBucketVersion(std::shared_ptr<Bucket const> const& bucket);
-
+    BucketEntryCounters getBucketEntryCounters() const;
     friend class BucketSnapshot;
+};
+
+enum class LedgerEntryTypeAndDurability : uint32_t
+{
+    ACCOUNT = 0,
+    TRUSTLINE = 1,
+    OFFER = 2,
+    DATA = 3,
+    CLAIMABLE_BALANCE = 4,
+    LIQUIDITY_POOL = 5,
+    TEMPORARY_CONTRACT_DATA = 6,
+    PERSISTENT_CONTRACT_DATA = 7,
+    CONTRACT_CODE = 8,
+    CONFIG_SETTING = 9,
+    TTL = 10
+};
+
+struct BucketEntryCounters
+{
+    std::map<LedgerEntryTypeAndDurability, size_t> mEntryTypeCounts;
+    std::map<LedgerEntryTypeAndDurability, size_t> mEntryTypeSizes;
+
+    BucketEntryCounters& operator+=(BucketEntryCounters const& other);
+
+    template <class Archive>
+    void
+    serialize(Archive& ar) const
+    {
+        ar(mEntryTypeCounts, mEntryTypeSizes);
+    }
 };
 }
