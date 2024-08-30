@@ -9,7 +9,7 @@
 
 namespace stellar
 {
-
+struct BucketEntryCounters;
 // Wrapper around LedgerCloseMeta XDR that provides mutable access to fields
 // in the proper version of meta.
 class LedgerCloseMetaFrame
@@ -34,6 +34,8 @@ class LedgerCloseMetaFrame
 
     void setNetworkConfiguration(SorobanNetworkConfig const& networkConfig,
                                  bool emitExtV1);
+
+    void setBucketEntryCounts(BucketEntryCounters const& bucketEntryCounters);
 
     LedgerCloseMeta const& getXDR() const;
 

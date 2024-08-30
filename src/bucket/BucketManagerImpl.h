@@ -144,7 +144,8 @@ class BucketManagerImpl : public BucketManager
                   uint32_t currLedgerProtocol,
                   std::vector<LedgerEntry> const& initEntries,
                   std::vector<LedgerEntry> const& liveEntries,
-                  std::vector<LedgerKey> const& deadEntries) override;
+                  std::vector<LedgerKey> const& deadEntries,
+                  LedgerCloseMetaFrame* ledgerCloseMeta) override;
     void snapshotLedger(LedgerHeader& currentHeader) override;
     void maybeSetIndex(std::shared_ptr<Bucket> b,
                        std::unique_ptr<BucketIndex const>&& index) override;
@@ -195,7 +196,8 @@ class BucketManagerImpl : public BucketManager
     std::shared_ptr<BasicWork> scheduleVerifyReferencedBucketsWork() override;
 
     Config const& getConfig() const override;
-    void reportBucketEntryCountMetrics() override;
+    void reportBucketEntryCountMetrics(
+        LedgerCloseMetaFrame* ledgerCloseMeta) override;
 };
 
 #define SKIP_1 50

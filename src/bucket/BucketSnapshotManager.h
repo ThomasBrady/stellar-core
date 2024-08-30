@@ -68,7 +68,8 @@ class BucketSnapshotManager : NonMovableOrCopyable
                                 uint32_t currLedgerProtocol,
                                 std::vector<LedgerEntry> const& initEntries,
                                 std::vector<LedgerEntry> const& liveEntries,
-                                std::vector<LedgerKey> const& deadEntries);
+                                std::vector<LedgerKey> const& deadEntries,
+                                LedgerCloseMetaFrame* ledgerCloseMeta);
     friend void BucketManagerImpl::assumeState(HistoryArchiveState const& has,
                                                uint32_t maxProtocolVersion,
                                                bool restartMerges);

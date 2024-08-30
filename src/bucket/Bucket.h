@@ -44,7 +44,6 @@ class BucketManager;
 class SearchableBucketListSnapshot;
 struct EvictionResultEntry;
 class EvictionStatistics;
-struct BucketEntryCounters;
 
 class Bucket : public std::enable_shared_from_this<Bucket>,
                public NonMovableOrCopyable

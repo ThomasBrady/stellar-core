@@ -29,6 +29,7 @@ class BasicWork;
 class BucketList;
 class BucketSnapshotManager;
 class Config;
+class LedgerCloseMetaFrame;
 class SearchableBucketListSnapshot;
 class TmpDirManager;
 struct HistoryArchiveState;
@@ -271,7 +272,8 @@ class BucketManager : NonMovableOrCopyable
                           uint32_t currLedgerProtocol,
                           std::vector<LedgerEntry> const& initEntries,
                           std::vector<LedgerEntry> const& liveEntries,
-                          std::vector<LedgerKey> const& deadEntries) = 0;
+                          std::vector<LedgerKey> const& deadEntries,
+                          LedgerCloseMetaFrame* ledgerCloseMeta = nullptr) = 0;
 
     // Update the given LedgerHeader's bucketListHash to reflect the current
     // state of the bucket list.
@@ -382,6 +384,7 @@ class BucketManager : NonMovableOrCopyable
     scheduleVerifyReferencedBucketsWork() = 0;
 
     virtual Config const& getConfig() const = 0;
-    virtual void reportBucketEntryCountMetrics() = 0;
+    virtual void
+    reportBucketEntryCountMetrics(LedgerCloseMetaFrame* ledgerCloseMeta) = 0;
 };
 }
