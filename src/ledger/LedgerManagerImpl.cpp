@@ -1702,7 +1702,8 @@ LedgerManagerImpl::transferLedgerEntriesToBucketList(
     if (blEnabled)
     {
         mApp.getBucketManager().addBatch(mApp, ledgerSeq, currLedgerVers,
-                                         initEntries, liveEntries, deadEntries);
+                                         initEntries, liveEntries, deadEntries,
+                                         ledgerCloseMeta.get());
     }
 }
 

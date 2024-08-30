@@ -3,6 +3,7 @@
 // of this distribution or at http://www.apache.org/licenses/LICENSE-2.0
 
 #include "ledger/LedgerCloseMetaFrame.h"
+#include "bucket/Bucket.h"
 #include "crypto/SHA.h"
 #include "ledger/LedgerTypeUtils.h"
 #include "transactions/TransactionMetaFrame.h"
@@ -184,6 +185,60 @@ LedgerCloseMetaFrame::setNetworkConfiguration(
         auto& ext = mLedgerCloseMeta.v1().ext.v1();
         ext.sorobanFeeWrite1KB = networkConfig.feeWrite1KB();
     }
+}
+
+void
+LedgerCloseMetaFrame::setBucketEntryCounts(
+    BucketEntryCounters const& bucketEntryCounters)
+{
+    releaseAssert(mVersion == 1);
+    auto metaCounts = mLedgerCloseMeta.v1().bucketEntryCounters;
+    auto metaSizes = mLedgerCloseMeta.v1().bucketEntrySizes;
+    metaCounts.account = bucketEntryCounters.mEntryTypeCounts.at(
+        LedgerEntryTypeAndDurability::ACCOUNT);
+    metaCounts.trustline = bucketEntryCounters.mEntryTypeCounts.at(
+        LedgerEntryTypeAndDurability::TRUSTLINE);
+    metaCounts.offer = bucketEntryCounters.mEntryTypeCounts.at(
+        LedgerEntryTypeAndDurability::OFFER);
+    metaCounts.data = bucketEntryCounters.mEntryTypeCounts.at(
+        LedgerEntryTypeAndDurability::DATA);
+    metaCounts.claimableBalance = bucketEntryCounters.mEntryTypeCounts.at(
+        LedgerEntryTypeAndDurability::CLAIMABLE_BALANCE);
+    metaCounts.liquidityPool = bucketEntryCounters.mEntryTypeCounts.at(
+        LedgerEntryTypeAndDurability::LIQUIDITY_POOL);
+    metaCounts.temporaryContractData = bucketEntryCounters.mEntryTypeCounts.at(
+        LedgerEntryTypeAndDurability::TEMPORARY_CONTRACT_DATA);
+    metaCounts.persistentContractData = bucketEntryCounters.mEntryTypeCounts.at(
+        LedgerEntryTypeAndDurability::PERSISTENT_CONTRACT_DATA);
+    metaCounts.contractCode = bucketEntryCounters.mEntryTypeCounts.at(
+        LedgerEntryTypeAndDurability::CONTRACT_CODE);
+    metaCounts.configSetting = bucketEntryCounters.mEntryTypeCounts.at(
+        LedgerEntryTypeAndDurability::CONFIG_SETTING);
+    metaCounts.ttl = bucketEntryCounters.mEntryTypeCounts.at(
+        LedgerEntryTypeAndDurability::TTL);
+
+    metaSizes.account = bucketEntryCounters.mEntryTypeSizes.at(
+        LedgerEntryTypeAndDurability::ACCOUNT);
+    metaSizes.trustline = bucketEntryCounters.mEntryTypeSizes.at(
+        LedgerEntryTypeAndDurability::TRUSTLINE);
+    metaSizes.offer = bucketEntryCounters.mEntryTypeSizes.at(
+        LedgerEntryTypeAndDurability::OFFER);
+    metaSizes.data = bucketEntryCounters.mEntryTypeSizes.at(
+        LedgerEntryTypeAndDurability::DATA);
+    metaSizes.claimableBalance = bucketEntryCounters.mEntryTypeSizes.at(
+        LedgerEntryTypeAndDurability::CLAIMABLE_BALANCE);
+    metaSizes.liquidityPool = bucketEntryCounters.mEntryTypeSizes.at(
+        LedgerEntryTypeAndDurability::LIQUIDITY_POOL);
+    metaSizes.temporaryContractData = bucketEntryCounters.mEntryTypeSizes.at(
+        LedgerEntryTypeAndDurability::TEMPORARY_CONTRACT_DATA);
+    metaSizes.persistentContractData = bucketEntryCounters.mEntryTypeSizes.at(
+        LedgerEntryTypeAndDurability::PERSISTENT_CONTRACT_DATA);
+    metaSizes.contractCode = bucketEntryCounters.mEntryTypeSizes.at(
+        LedgerEntryTypeAndDurability::CONTRACT_CODE);
+    metaSizes.configSetting = bucketEntryCounters.mEntryTypeSizes.at(
+        LedgerEntryTypeAndDurability::CONFIG_SETTING);
+    metaSizes.ttl = bucketEntryCounters.mEntryTypeSizes.at(
+        LedgerEntryTypeAndDurability::TTL);
 }
 
 LedgerCloseMeta const&

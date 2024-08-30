@@ -14,6 +14,7 @@
 #include "crypto/Hex.h"
 #include "history/HistoryManager.h"
 #include "historywork/VerifyBucketWork.h"
+#include "ledger/LedgerCloseMetaFrame.h"
 #include "ledger/LedgerManager.h"
 #include "ledger/LedgerTxn.h"
 #include "ledger/LedgerTypeUtils.h"
@@ -889,7 +890,8 @@ BucketManagerImpl::addBatch(Application& app, uint32_t currLedger,
                             uint32_t currLedgerProtocol,
                             std::vector<LedgerEntry> const& initEntries,
                             std::vector<LedgerEntry> const& liveEntries,
-                            std::vector<LedgerKey> const& deadEntries)
+                            std::vector<LedgerKey> const& deadEntries,
+                            LedgerCloseMetaFrame* ledgerCloseMeta)
 {
     ZoneScoped;
     releaseAssertOrThrow(app.getConfig().MODE_ENABLES_BUCKETLIST);
@@ -910,7 +912,7 @@ BucketManagerImpl::addBatch(Application& app, uint32_t currLedger,
     {
         mSnapshotManager->updateCurrentSnapshot(
             std::make_unique<BucketListSnapshot>(*mBucketList, currLedger));
-        reportBucketEntryCountMetrics();
+        reportBucketEntryCountMetrics(ledgerCloseMeta);
     }
 }
 
@@ -1559,7 +1561,8 @@ to_string(LedgerEntryTypeAndDurability const type)
 }
 
 void
-BucketManagerImpl::reportBucketEntryCountMetrics()
+BucketManagerImpl::reportBucketEntryCountMetrics(
+    LedgerCloseMetaFrame* ledgerCloseMeta)
 {
     auto bucketEntryCounters = mBucketList->sumBucketEntryCounters();
     for (auto& [type, count] : bucketEntryCounters.mEntryTypeCounts)
@@ -1589,6 +1592,10 @@ BucketManagerImpl::reportBucketEntryCountMetrics()
         }
         sizesCounter->second.set_count(
             bucketEntryCounters.mEntryTypeSizes[type]);
+    }
+    if (ledgerCloseMeta)
+    {
+        ledgerCloseMeta->setBucketEntryCounts(bucketEntryCounters);
     }
 }
 }
