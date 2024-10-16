@@ -312,6 +312,7 @@ HistoryManagerImpl::takeSnapshotAndPublish(HistoryArchiveState const& has)
 size_t
 HistoryManagerImpl::publishQueuedHistory()
 {
+    ZoneScoped;
     if (mApp.isStopping())
     {
         return 0;

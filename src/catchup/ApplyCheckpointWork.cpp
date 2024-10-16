@@ -38,6 +38,7 @@ ApplyCheckpointWork::ApplyCheckpointWork(Application& app,
           app.getHistoryManager().checkpointContainingLedger(range.mFirst))
     , mOnFailure(cb)
 {
+    ZoneScoped;
     // Ledger range check to enforce application of a single checkpoint
     auto const& hm = mApp.getHistoryManager();
     auto low = hm.firstLedgerInCheckpointContaining(mCheckpoint);
@@ -56,6 +57,7 @@ ApplyCheckpointWork::ApplyCheckpointWork(Application& app,
 std::string
 ApplyCheckpointWork::getStatus() const
 {
+    ZoneScoped;
     if (getState() == State::WORK_RUNNING)
     {
         auto lcl = mApp.getLedgerManager().getLastClosedLedgerNum();
@@ -67,6 +69,7 @@ ApplyCheckpointWork::getStatus() const
 void
 ApplyCheckpointWork::closeFiles()
 {
+    ZoneScoped;
     mHdrIn.close();
     mTxIn.close();
     mFilesOpen = false;
@@ -75,6 +78,7 @@ ApplyCheckpointWork::closeFiles()
 void
 ApplyCheckpointWork::onReset()
 {
+    ZoneScoped;
     mConditionalWork.reset();
     closeFiles();
 }
@@ -95,6 +99,16 @@ ApplyCheckpointWork::openInputFiles()
     mTxIn.open(ti.localPath_nogz());
     mTxHistoryEntry = TransactionHistoryEntry();
     mHeaderHistoryEntry = LedgerHeaderHistoryEntry();
+    if (mApp.getConfig().CATCHUP_SKIP_KNOWN_RESULTS)
+    {
+        mTxResultIn.close();
+        FileTransferInfo tri(mDownloadDir, HISTORY_FILE_TYPE_RESULTS,
+                             mCheckpoint);
+        CLOG_DEBUG(History, "Replaying transaction results from {}",
+                     tri.localPath_nogz());
+        mTxResultIn.open(tri.localPath_nogz());
+        mTxHistoryResultEntry = TransactionHistoryResultEntry{};
+    }
     mFilesOpen = true;
 }
 
@@ -138,6 +152,39 @@ ApplyCheckpointWork::getCurrentTxSet()
 
     CLOG_DEBUG(History, "Using empty txset for ledger {}", seq);
     return TxSetXDRFrame::makeEmpty(lm.getLastClosedLedgerHeader());
+}
+
+std::optional<TransactionResultSet>
+ApplyCheckpointWork::getCurrentTxResultSet()
+{
+    ZoneScoped;
+    auto& lm = mApp.getLedgerManager();
+    auto seq = lm.getLastClosedLedgerNum() + 1;
+
+    // Check mTxResultSet prior to loading next result set.
+    // This order is important because it accounts for ledger "gaps"
+    // in the history archives (which are caused by ledgers with empty tx
+    // sets, as those are not uploaded).
+    do
+    {
+        if (mTxHistoryResultEntry.ledgerSeq < seq)
+        {
+            CLOG_DEBUG(History, "Advancing past txresultset for ledger {}",
+                       mTxHistoryResultEntry.ledgerSeq);
+        }
+        else if (mTxHistoryResultEntry.ledgerSeq > seq)
+        {
+            break;
+        }
+        else
+        {
+            releaseAssert(mTxHistoryResultEntry.ledgerSeq == seq);
+            CLOG_DEBUG(History, "Loaded txresultset for ledger {}", seq);
+            return std::make_optional(mTxHistoryResultEntry.txResultSet);
+        }
+    } while (mTxResultIn && mTxResultIn.readOne(mTxHistoryResultEntry));
+    CLOG_DEBUG(History, "No txresultset for ledger {}", seq);
+    return std::nullopt;    
 }
 
 std::shared_ptr<LedgerCloseData>
@@ -218,6 +265,12 @@ ApplyCheckpointWork::getNextLedgerCloseData()
     CLOG_DEBUG(History, "Ledger {} has {} transactions", header.ledgerSeq,
                txset->sizeTxTotal());
 
+    std::optional<TransactionResultSet> txres = std::nullopt;
+    if (mApp.getConfig().CATCHUP_SKIP_KNOWN_RESULTS)
+    {
+        txres = getCurrentTxResultSet();
+    }
+
     // We've verified the ledgerHeader (in the "trusted part of history"
     // sense) in CATCHUP_VERIFY phase; we now need to check that the
     // txhash we're about to apply is the one denoted by that ledger
@@ -248,7 +301,7 @@ ApplyCheckpointWork::getNextLedgerCloseData()
 
     return std::make_shared<LedgerCloseData>(
         header.ledgerSeq, txset, header.scpValue,
-        std::make_optional<Hash>(mHeaderHistoryEntry.hash));
+        std::make_optional<Hash>(mHeaderHistoryEntry.hash), txres);
 }
 
 BasicWork::State

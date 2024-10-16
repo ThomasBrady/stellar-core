@@ -26,6 +26,7 @@ WriteSnapshotWork::WriteSnapshotWork(Application& app,
 BasicWork::State
 WriteSnapshotWork::onRun()
 {
+    ZoneScoped;
     if (mDone)
     {
         return mSuccess ? State::WORK_SUCCESS : State::WORK_FAILURE;

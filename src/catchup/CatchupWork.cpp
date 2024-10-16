@@ -39,6 +39,7 @@ uint32_t const CatchupWork::PUBLISH_QUEUE_MAX_SIZE = 16;
 static std::shared_ptr<LedgerHeaderHistoryEntry>
 getHistoryEntryForLedger(uint32_t ledgerSeq, FileTransferInfo const& ft)
 {
+    ZoneScoped;
     XDRInputFileStream in;
     in.open(ft.localPath_nogz());
 
@@ -87,6 +88,7 @@ CatchupWork::CatchupWork(Application& app,
     , mArchive{archive}
     , mRetainedBuckets{bucketsToRetain}
 {
+    ZoneScoped;
     if (mArchive)
     {
         CLOG_INFO(History, "CatchupWork: selected archive {}",
@@ -105,6 +107,7 @@ CatchupWork::~CatchupWork()
 std::string
 CatchupWork::getStatus() const
 {
+    ZoneScoped;
     std::string toLedger;
     if (mCatchupConfiguration.toLedger() == CatchupConfiguration::CURRENT)
     {
@@ -302,7 +305,7 @@ void
 CatchupWork::downloadApplyTransactions(CatchupRange const& catchupRange)
 {
     ZoneScoped;
-    auto waitForPublish = mCatchupConfiguration.offline();
+    auto waitForPublish = false; // mCatchupConfiguration.offline();
     auto range = catchupRange.getReplayRange();
     mTransactionsVerifyApplySeq = std::make_shared<DownloadApplyTxsWork>(
         mApp, *mDownloadDir, range, mLastApplied, waitForPublish, mArchive);
@@ -311,6 +314,7 @@ CatchupWork::downloadApplyTransactions(CatchupRange const& catchupRange)
 BasicWork::State
 CatchupWork::getAndMaybeSetHistoryArchiveState()
 {
+    ZoneScoped;
     // First, retrieve the HAS
 
     // If we're just doing local catchup, set HAS right away
@@ -407,6 +411,7 @@ CatchupWork::getAndMaybeSetHistoryArchiveState()
 BasicWork::State
 CatchupWork::getAndMaybeSetBucketHistoryArchiveState(uint32_t applyBucketsAt)
 {
+    ZoneScoped;
     if (!alreadyHaveBucketsHistoryArchiveState(applyBucketsAt))
     {
         if (!mGetBucketStateWork)

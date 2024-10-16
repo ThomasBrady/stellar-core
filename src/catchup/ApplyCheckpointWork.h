@@ -21,20 +21,24 @@ class TmpDir;
 struct LedgerHeaderHistoryEntry;
 
 /**
- * This class is responsible for applying transactions stored in files on
- * temporary directory (downloadDir) to local ledger. It requires two sets of
- * files - ledgers and transactions - int .xdr format. Transaction files are
- * used to read transactions that will be used and ledger files are used to
+ * This class is responsible for applying transactions stored in files in the
+ * temporary directory (downloadDir) to local the ledger. It requires two sets of
+ * files - ledgers and transactions - in .xdr format. Transaction files are
+ * used to read transactions that will be applied and ledger files are used to
  * check if ledger hashes are matching.
  *
+ * It may also require a third set of files - transaction results - to use in
+ * accelerated replay, where failed transactions are not applied and successful 
+ * transactions are applied without verifying their signatures. 
+ * 
  * In each run it skips or applies transactions from one ledger. Skipping occurs
- * when ledger to be applied is older than LCL from local ledger. At LCL
- * boundary checks are made to confirm that ledgers from files knit up with
+ * when the ledger to be applied is older than the LCL of the local ledger. At LCL,
+ * boundary checks are made to confirm that the ledgers from the files knit up with
  * LCL. If everything is OK, an apply ledger operation is performed. Then
- * another check is made - if new local ledger matches corresponding ledger from
+ * another check is made - if the new local ledger matches corresponding the ledger from
  * file.
  *
- * Constructor of this class takes some important parameters:
+ * The constructor of this class takes some important parameters:
  * * downloadDir - directory containing ledger and transaction files
  * * range - LedgerRange to apply, must be checkpoint-aligned,
  * and cover at most one checkpoint.
@@ -48,7 +52,9 @@ class ApplyCheckpointWork : public BasicWork
 
     XDRInputFileStream mHdrIn;
     XDRInputFileStream mTxIn;
+    XDRInputFileStream mTxResultIn;
     TransactionHistoryEntry mTxHistoryEntry;
+    TransactionHistoryResultEntry mTxHistoryResultEntry;
     LedgerHeaderHistoryEntry mHeaderHistoryEntry;
     OnFailureCallback mOnFailure;
 
@@ -57,6 +63,7 @@ class ApplyCheckpointWork : public BasicWork
     std::shared_ptr<ConditionalWork> mConditionalWork;
 
     TxSetXDRFrameConstPtr getCurrentTxSet();
+    std::optional<TransactionResultSet> getCurrentTxResultSet();
     void openInputFiles();
 
     std::shared_ptr<LedgerCloseData> getNextLedgerCloseData();

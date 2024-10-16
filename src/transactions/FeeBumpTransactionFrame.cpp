@@ -575,4 +575,12 @@ FeeBumpTransactionFrame::toStellarMessage() const
     msg->transaction() = mEnvelope;
     return msg;
 }
+
+void 
+FeeBumpTransactionFrame::setReplayFailingTransactionResult(
+    TransactionResult const&) const { /* NO OP*/ }
+void 
+FeeBumpTransactionFrame::setReplaySuccessfulTransactionResult(
+    TransactionResult const&) const { /* NO OP*/ }
+
 }

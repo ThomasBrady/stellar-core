@@ -134,7 +134,10 @@ class TransactionTestFrame : public TransactionFrameBase
     SorobanResources const& sorobanResources() const override;
     int64 declaredSorobanResourceFee() const override;
     bool XDRProvidesValidFee() const override;
-
+    void setReplayFailingTransactionResult(
+        TransactionResult const& failing) const override;
+    void setReplaySuccessfulTransactionResult(
+        TransactionResult const& successful) const override;
     bool
     isTestTx() const override
     {

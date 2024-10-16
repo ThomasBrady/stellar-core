@@ -139,5 +139,10 @@ class FeeBumpTransactionFrame : public TransactionFrameBase
     SorobanResources const& sorobanResources() const override;
     virtual int64 declaredSorobanResourceFee() const override;
     virtual bool XDRProvidesValidFee() const override;
+
+    void setReplayFailingTransactionResult(
+        TransactionResult const& failing) const override;
+    void setReplaySuccessfulTransactionResult(
+        TransactionResult const& successful) const override;
 };
 }

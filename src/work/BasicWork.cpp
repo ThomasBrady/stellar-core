@@ -73,12 +73,14 @@ BasicWork::shutdown()
 std::string const&
 BasicWork::getName() const
 {
+    ZoneScoped;
     return mName;
 }
 
 std::string
 BasicWork::getStatus() const
 {
+    ZoneScoped;
     // Work is in `WAITING` state when retrying
     auto state = mRetryTimer ? InternalState::RETRYING : mState.load();
 

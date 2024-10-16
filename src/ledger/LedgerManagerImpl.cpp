@@ -59,6 +59,7 @@
 
 #include <chrono>
 #include <numeric>
+#include <optional>
 #include <regex>
 #include <sstream>
 #include <stdexcept>
@@ -915,7 +916,7 @@ LedgerManagerImpl::closeLedger(LedgerCloseData const& ledgerData)
     txResultSet.results.reserve(txs.size());
     // Subtle: after this call, `header` is invalidated, and is not safe to use
     applyTransactions(*applicableTxSet, txs, mutableTxResults, ltx, txResultSet,
-                      ledgerCloseMeta);
+                      ledgerData.getExpectedResults(), ledgerCloseMeta);
     if (mApp.getConfig().MODE_STORES_HISTORY_MISC)
     {
         storeTxSet(mApp.getDatabase(), ltx.loadHeader().current().ledgerSeq,
@@ -1515,6 +1516,7 @@ LedgerManagerImpl::applyTransactions(
     std::vector<TransactionFrameBasePtr> const& txs,
     std::vector<MutableTxResultPtr> const& mutableTxResults,
     AbstractLedgerTxn& ltx, TransactionResultSet& txResultSet,
+    std::optional<TransactionResultSet> const& expectedResults,
     std::unique_ptr<LedgerCloseMetaFrame> const& ledgerCloseMeta)
 {
     ZoneNamedN(txsZone, "applyTransactions", true);
@@ -1536,6 +1538,15 @@ LedgerManagerImpl::applyTransactions(
     }
 
     prefetchTransactionData(txs);
+
+    std::optional<std::vector<TransactionResultPair>::const_iterator> expectedResultsIter = std::nullopt;
+    if (mApp.getConfig().CATCHUP_SKIP_KNOWN_RESULTS && expectedResults)
+    {
+        auto const& resVec = expectedResults->results;
+        CLOG_DEBUG(Tx, "Will skip replaying known results: {} txs, {} results", txs.size(), resVec.size());
+        releaseAssertOrThrow(txs.size() == resVec.size());
+        expectedResultsIter = std::make_optional(resVec.begin());
+    }
 
     Hash sorobanBasePrngSeed = txSet.getContentsHash();
     uint64_t txNum{0};
@@ -1567,11 +1578,40 @@ LedgerManagerImpl::applyTransactions(
         }
         ++txNum;
 
-        tx->apply(mApp, ltx, tm, mutableTxResult, subSeed);
-        tx->processPostApply(mApp, ltx, tm, mutableTxResult);
         TransactionResultPair results;
         results.transactionHash = tx->getContentsHash();
+
+        if (expectedResultsIter)
+        {
+            auto resultsIt = *expectedResultsIter;
+
+            releaseAssert(resultsIt != expectedResults->results.end());
+            CLOG_DEBUG(Tx, "expectedResultsIt->transactionHash: {} tx->getContentsHash(): {}", hexAbbrev(resultsIt->transactionHash), hexAbbrev(results.transactionHash));
+            while (resultsIt->transactionHash != results.transactionHash)
+            {
+                resultsIt++;
+                CLOG_DEBUG(Tx, "expectedResultsIt->transactionHash: {} tx->getContentsHash(): {}", hexAbbrev(resultsIt->transactionHash), hexAbbrev(results.transactionHash));
+                releaseAssert(resultsIt != expectedResults->results.end());
+            }
+            releaseAssert(resultsIt->transactionHash == results.transactionHash);
+            if (resultsIt->result.result.code() == TransactionResultCode::txSUCCESS)
+            {
+                CLOG_DEBUG(Tx, "Skipping signature verification for known successful tx#{}", index);
+                tx->setReplaySuccessfulTransactionResult(resultsIt->result);
+            } 
+            else 
+            {
+                CLOG_DEBUG(Tx, "Skipping replay of known failed tx#{}", index);
+                tx->setReplayFailingTransactionResult(resultsIt->result);
+            }
+            //resultsIt++;
+        }
+
+        tx->apply(mApp, ltx, tm, mutableTxResult, subSeed);
+        tx->processPostApply(mApp, ltx, tm, mutableTxResult);
+ 
         results.result = mutableTxResult->getResult();
+
         if (results.result.result.code() == TransactionResultCode::txSUCCESS)
         {
             if (tx->isSoroban())

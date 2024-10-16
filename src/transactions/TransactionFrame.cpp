@@ -1151,6 +1151,17 @@ TransactionFrame::processSignatures(
     return maybeValid;
 }
 
+// These functions are const so that we can call them from a const context but they modify mutable members.
+void TransactionFrame::setReplaySuccessfulTransactionResult(TransactionResult const& successful) const
+{
+    mReplaySuccessfulTransactionResult = std::make_optional(successful);
+}
+
+void TransactionFrame::setReplayFailingTransactionResult(TransactionResult const& failing) const
+{
+    mReplayFailingTransactionResult = std::make_optional(failing);
+}
+
 bool
 TransactionFrame::isBadSeq(LedgerHeaderWrapper const& header,
                            int64_t seqNum) const
@@ -1572,6 +1583,25 @@ TransactionFrame::applyOperations(SignatureChecker& signatureChecker,
                                   Hash const& sorobanBasePrngSeed) const
 {
     ZoneScoped;
+    if (mReplayFailingTransactionResult.has_value())
+    {
+        // Sub-zone for skips
+        ZoneScopedN("skipped failed");
+        // TODO - should we be verifying signatures?
+        txResult.setResultCode(mReplayFailingTransactionResult->result.code()); 
+        txResult.getResult().result.results() = mReplayFailingTransactionResult->result.results();
+        return false;
+    } 
+    if (mReplaySuccessfulTransactionResult.has_value())
+    {
+        // Sub-zone for skips
+        ZoneScopedN("skipped success");
+        // TODO - should we be verifying signatures?
+        txResult.setResultCode(mReplaySuccessfulTransactionResult->result.code()); 
+        txResult.getResult().result.results() = mReplaySuccessfulTransactionResult->result.results();
+        return true;
+    }
+
     auto& internalErrorCounter = app.getMetrics().NewCounter(
         {"ledger", "transaction", "internal-error"});
     bool reportInternalErrOnException = true;

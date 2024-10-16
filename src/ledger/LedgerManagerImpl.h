@@ -84,6 +84,7 @@ class LedgerManagerImpl : public LedgerManager
         std::vector<TransactionFrameBasePtr> const& txs,
         std::vector<MutableTxResultPtr> const& mutableTxResults,
         AbstractLedgerTxn& ltx, TransactionResultSet& txResultSet,
+        std::optional<TransactionResultSet> const& expectedResults, 
         std::unique_ptr<LedgerCloseMetaFrame> const& ledgerCloseMeta);
 
     // initialLedgerVers must be the ledger version at the start of the ledger.

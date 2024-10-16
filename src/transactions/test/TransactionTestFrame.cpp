@@ -346,4 +346,11 @@ TransactionTestFrame::XDRProvidesValidFee() const
 {
     return mTransactionFrame->XDRProvidesValidFee();
 }
+
+void 
+TransactionTestFrame::setReplayFailingTransactionResult(
+    TransactionResult const&) const { /* NO OP*/ }
+void 
+TransactionTestFrame::setReplaySuccessfulTransactionResult(
+    TransactionResult const&) const { /* NO OP*/ }
 }

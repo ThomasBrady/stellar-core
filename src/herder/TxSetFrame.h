@@ -25,6 +25,8 @@ class ApplicableTxSetFrame;
 using TxSetXDRFrameConstPtr = std::shared_ptr<TxSetXDRFrame const>;
 using ApplicableTxSetFrameConstPtr =
     std::unique_ptr<ApplicableTxSetFrame const>;
+// TODO maybe move this to a separate file
+//using TxResultSetXDRFrameConstPtr = std::shared_ptr<TxResultSetXDRFrame const>;
 
 enum class TxSetPhase
 {

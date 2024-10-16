@@ -203,6 +203,11 @@ class Config : public std::enable_shared_from_this<Config>
     // If you want, say, a week of history, set this to 120000.
     uint32_t CATCHUP_RECENT;
 
+    // Mode for "accelerated" catchup. If set to true, the node will skip
+    // application of failed transactions and will not verify signatures of
+    // successful transactions. 
+    bool CATCHUP_SKIP_KNOWN_RESULTS;
+
     // Interval between automatic maintenance executions
     std::chrono::seconds AUTOMATIC_MAINTENANCE_PERIOD;
 

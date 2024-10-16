@@ -69,6 +69,8 @@ class TransactionFrame : public TransactionFrameBase
     mutable Hash mFullHash;     // the hash of the contents and the sig.
 
     std::vector<std::shared_ptr<OperationFrame const>> mOperations;
+    mutable std::optional<TransactionResult> mReplaySuccessfulTransactionResult{std::nullopt};
+    mutable std::optional<TransactionResult> mReplayFailingTransactionResult{std::nullopt};
 
     LedgerTxnEntry loadSourceAccount(AbstractLedgerTxn& ltx,
                                      LedgerTxnHeader const& header) const;
@@ -287,6 +289,10 @@ class TransactionFrame : public TransactionFrameBase
     virtual int64 declaredSorobanResourceFee() const override;
     virtual bool XDRProvidesValidFee() const override;
 
+    void setReplayFailingTransactionResult(
+        TransactionResult const& failing) const override;
+    void setReplaySuccessfulTransactionResult(
+        TransactionResult const& successful) const override;
 #ifdef BUILD_TESTS
     friend class TransactionTestFrame;
 #endif

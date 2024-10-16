@@ -1150,6 +1150,8 @@ Config::processConfig(std::shared_ptr<cpptoml::table> t)
                      CATCHUP_RECENT =
                          readInt<uint32_t>(item, 0, UINT32_MAX - 1);
                  }},
+                 {"CATCHUP_SKIP_KNOWN_RESULTS",
+                 [&]() { CATCHUP_SKIP_KNOWN_RESULTS = readBool(item); }},
                 {"ARTIFICIALLY_GENERATE_LOAD_FOR_TESTING",
                  [&]() {
                      ARTIFICIALLY_GENERATE_LOAD_FOR_TESTING = readBool(item);

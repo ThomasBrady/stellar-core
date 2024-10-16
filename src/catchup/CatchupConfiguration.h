@@ -13,7 +13,7 @@
 namespace stellar
 {
 
-// Each catchup can be configured by two parameters destination ledger
+// Each catchup can be configured by two parameters: destination ledger
 // (and its hash, if known) and count of ledgers to apply.
 // Value of count can be adjusted in different ways during catchup. If applying
 // count ledgers would mean going before the last closed ledger - it is
@@ -31,10 +31,10 @@ namespace stellar
 // and catchup to that instead of destination ledger. This is useful when
 // doing offline commandline catchups with stellar-core catchup command.
 //
-// Catchup can be done in two modes - ONLINE nad OFFLINE. In ONLINE mode node
+// Catchup can be done in two modes - ONLINE and OFFLINE. In ONLINE mode, the node
 // is connected to the network. If receives ledgers during catchup and applies
-// them after history is applied. Also additional closing ledger is required
-// to mark catchup as complete and node as synced. In OFFLINE mode node is not
+// them after history is applied. Also, an additional closing ledger is required
+// to mark catchup as complete and the node as synced. In OFFLINE mode, the node is not
 // connected to network, so new ledgers are not being externalized. Only
 // buckets and transactions from history archives are applied.
 class CatchupConfiguration
